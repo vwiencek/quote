@@ -16,8 +16,8 @@ Clicking a mode button again re-rolls the activity and restarts the timer.
 
 Activities are loaded at page load, in this order:
 
-1. **Google Sheet** [`quote-activities`](https://docs.google.com/spreadsheets/d/1eukn-3n_L_6bDl1u_1L3UQpdtpK19ZijChwATly6lQA/edit) — two columns, `soft` and `hard`, one activity per row. Edit the sheet and refresh the page: no deploy needed.
-   The sheet must be shared as **"anyone with the link can view"** for the page to read it (it is fetched as CSV from the browser).
+1. **Google Sheet** ([open](https://docs.google.com/spreadsheets/d/1gb7xpanZLM27QUE_HyQbRwNSvxlHbVDEmk2IzXaZIZ4/edit)) — columns `gage` (the text) and `type` (`soft` or `hard`), one entry per row. Edit the sheet and refresh the page: no deploy needed.
+   The sheet must be shared as **"anyone with the link can view"** for the page to read it (it is fetched as CSV from the browser). A column-based layout (one `soft` column, one `hard` column) is also supported.
 2. **`quotes.json`** (fallback) — used automatically when the sheet is unreachable or malformed.
 
 The browser console says which source was used.

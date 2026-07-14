@@ -58,7 +58,7 @@
     gap: 0.75rem;
   }
   #result.visible { display: flex; }
-  #item { font-size: 1.5rem; font-weight: 700; }
+  #item { font-size: 1.15rem; font-weight: 700; line-height: 1.4; }
   .timer-row {
     display: flex;
     align-items: center;
@@ -118,10 +118,12 @@
   </div>
 
 <script>
-  // Data comes from the "quote-activities" Google Sheet (columns: soft, hard).
-  // The sheet must be shared as "anyone with the link can view".
+  // Data comes from a Google Sheet shared as "anyone with the link can view".
+  // Two formats are supported:
+  //   - row-based: columns "gage" (text) and "type" (soft/hard), one entry per row
+  //   - column-based: one "soft" column and one "hard" column
   // quotes.json is the fallback when the sheet is unreachable.
-  const SHEET_ID = "1eukn-3n_L_6bDl1u_1L3UQpdtpK19ZijChwATly6lQA";
+  const SHEET_ID = "1gb7xpanZLM27QUE_HyQbRwNSvxlHbVDEmk2IzXaZIZ4";
   const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/" + SHEET_ID + "/gviz/tq?tqx=out:csv";
   const FALLBACK_URL = "quotes.json";
   const MIN_MINUTES = 2;
@@ -163,13 +165,27 @@
   function csvToActivities(text) {
     const rows = parseCsv(text);
     const headers = rows[0].map(h => h.trim().toLowerCase());
+    const typeIdx = headers.indexOf("type");
     const data = {};
-    headers.forEach(h => { if (h) data[h] = []; });
-    for (const r of rows.slice(1)) {
-      r.forEach((value, i) => {
-        const key = headers[i];
-        if (key && value && value.trim()) data[key].push(value.trim());
-      });
+
+    if (typeIdx !== -1) {
+      // Row-based format: a text column + a "type" column (soft/hard).
+      const textIdx = headers.findIndex((h, i) => h && i !== typeIdx);
+      for (const r of rows.slice(1)) {
+        const value = (r[textIdx] || "").trim();
+        const key = (r[typeIdx] || "").trim().toLowerCase();
+        if (!value || !key) continue;
+        (data[key] = data[key] || []).push(value);
+      }
+    } else {
+      // Column-based format: one column per key.
+      headers.forEach(h => { if (h) data[h] = []; });
+      for (const r of rows.slice(1)) {
+        r.forEach((value, i) => {
+          const key = headers[i];
+          if (key && value && value.trim()) data[key].push(value.trim());
+        });
+      }
     }
     return data;
   }
