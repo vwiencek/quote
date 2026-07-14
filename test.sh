@@ -1,7 +1,7 @@
 #!/bin/sh
-# Smoke-test the site: start a temporary server, check that the page is
-# served, and validate that the Google Sheet data source is reachable
-# and well-formed (needs network access).
+# Smoke-test the site: start a temporary server, check that the page and
+# PWA assets are served, and validate that the Google Sheet data source
+# is reachable and well-formed (needs network access).
 # Usage: ./test.sh
 cd "$(dirname "$0")"
 PORT=8765
@@ -23,6 +23,15 @@ check_url() {
 }
 
 check_url index.html
+check_url styles.css
+check_url manifest.json
+check_url sw.js
+check_url icon-192.png
+check_url icon-512.png
+check_url icon-180.png
+
+SOUND=$(sed -n 's/.*const END_SOUND_URL = "\([^"]*\)".*/\1/p' index.html)
+[ -n "$SOUND" ] && check_url "$SOUND"
 
 SHEET_ID=$(sed -n 's/.*const SHEET_ID = "\([^"]*\)".*/\1/p' index.html)
 if [ -z "$SHEET_ID" ]; then
@@ -33,20 +42,47 @@ import csv, sys, collections
 rows = list(csv.reader(sys.stdin))
 assert rows, 'empty sheet'
 headers = [h.strip().lower() for h in rows[0]]
+idx = {h: i for i, h in enumerate(headers) if h}
+level_col = 'level' if 'level' in idx else ('type' if 'type' in idx else None)
+assert level_col, f'no level/type column in {headers}'
+text_idx = idx.get('gage', next(i for i, h in enumerate(headers) if h and i != idx[level_col]))
+
+def cell(r, i):
+    return r[i].strip() if i is not None and i < len(r) else ''
+
+# The app tolerates missing player/min/max/keyword (defaults apply) and
+# skips rows without a level; those are reported as warnings, not failures.
 counts = collections.Counter()
-level_col = 'level' if 'level' in headers else ('type' if 'type' in headers else None)
-if level_col:
-    type_idx = headers.index(level_col)
-    text_idx = headers.index('gage') if 'gage' in headers else next(i for i, h in enumerate(headers) if h and i != type_idx)
-    for r in rows[1:]:
-        if len(r) > max(type_idx, text_idx) and r[text_idx].strip() and r[type_idx].strip():
-            counts[r[type_idx].strip().lower()] += 1
-else:
-    for i, h in enumerate(headers):
-        if h:
-            counts[h] = sum(1 for r in rows[1:] if len(r) > i and r[i].strip())
+warnings = []
+for n, r in enumerate(rows[1:], 2):
+    text = cell(r, text_idx)
+    level = cell(r, idx[level_col]).lower()
+    if not text and not level:
+        continue  # blank row
+    if not level:
+        warnings.append(f'row {n}: no level -> gage is ignored by the app')
+        continue
+    if not text:
+        warnings.append(f'row {n}: level without gage text')
+        continue
+    if level not in ('soft', 'hard'):
+        warnings.append(f'row {n}: unknown level {level!r} -> unreachable from the UI')
+    counts[level] += 1
+    if 'player' in idx:
+        p = cell(r, idx['player']).lower()
+        if p and p not in ('homme', 'femme', 'both'):
+            warnings.append(f'row {n}: unknown player {p!r} -> gage never drawn')
+    if 'min' in idx and 'max' in idx:
+        mn, mx = cell(r, idx['min']), cell(r, idx['max'])
+        if mn.isdigit() and mx.isdigit() and int(mn) > int(mx):
+            warnings.append(f'row {n}: min {mn} > max {mx} (app swaps them)')
+
 assert counts.get('soft', 0) > 0 and counts.get('hard', 0) > 0, f'missing soft/hard entries: {dict(counts)}'
-print(f\"OK   Google Sheet data (soft: {counts['soft']}, hard: {counts['hard']})\")
+for w in warnings[:5]:
+    print(f'WARN sheet {w}')
+if len(warnings) > 5:
+    print(f'WARN sheet ... and {len(warnings) - 5} more (incomplete rows are fine while editing)')
+print(f\"OK   Google Sheet data (soft: {counts['soft']}, hard: {counts['hard']}, warnings: {len(warnings)})\")
 "; then :; else
   echo "FAIL Google Sheet data (unreachable, not shared, or malformed)"
   FAIL=1

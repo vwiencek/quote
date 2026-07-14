@@ -4,19 +4,21 @@
 
 ## What the site does
 
-1. You select the player at the top of the page ("Je suis ... un homme / une femme", remembered between visits).
+1. You select the player at the top of the page ("Donne un gage à ... un homme / une femme", remembered between visits). The **🔁 chacun son tour** toggle alternates the player automatically after each gage.
 2. You optionally narrow the pool with the **keyword filter chips** (all enabled by default; click to toggle).
-3. You pick a level: **Soft** or **Hard**.
+3. You pick a level: **Soft**, **Hard** — or **Surprise**, which picks one at random.
 4. The page answers with:
    - a random activity matching your level, filtered by player (entries marked `both` apply to everyone) and by the selected keywords
    - a random whole number of minutes drawn between that activity's `min` and `max`
-5. A **countdown timer** starts from that duration down to `0:00`, so you can actually measure the time spent on the task. When it reaches zero the timer turns green, shows "Time's up!", plays a short sound — a segment of `SF-cum.mp3` defined by the `END_SOUND_START` / `END_SOUND_END` constants (in seconds) at the top of the script in `index.html` — and vibrates on mobile. Next to the timer, **⏸** pauses/resumes the countdown and **+ 1 min** adds a minute (and restarts the countdown if time was already up).
+5. A **countdown timer** starts from that duration down to `0:00` inside a **progress ring** (blue for soft, pink for hard, green when done), so you can actually measure the time spent on the task. When it reaches zero the timer turns green, shows "Time's up!", plays a short sound — a segment of `SF-cum.mp3` defined by the `END_SOUND_START` / `END_SOUND_END` constants (in seconds) at the top of the script in `index.html` — and vibrates on mobile. Next to the timer, **⏸** pauses/resumes the countdown and **+ 1 min** adds a minute (and restarts the countdown if time was already up).
 
 Extra behavior:
 
 - **No repeats**: drawn gages are remembered (localStorage) and not drawn again until the whole pool for the current selection has been used, then a new round starts automatically.
 - **Screen stays awake** while the countdown runs (Screen Wake Lock API, where supported), so a phone doesn't lock mid-gage.
-- **Sheet cache (stale-while-revalidate)**: the last CSV is kept in localStorage and rendered instantly on load, then the sheet is always re-fetched in the background — if it changed, data and keyword chips refresh in place (keeping your selection) with a "données mises à jour" note; if the network is down, the page runs on the cached copy and says so.
+- **Sheet cache (stale-while-revalidate)**: the last CSV is kept in localStorage (keyed by sheet ID) and rendered instantly on load, then the sheet is always re-fetched in the background — if it changed, data and keyword chips refresh in place (keeping your selection) with a "données mises à jour" note; if the network is down, the page runs on the cached copy and says so.
+- **Mis-tap protection**: while a timer runs, replacing the gage takes two clicks within 3 seconds.
+- **PWA**: `manifest.json` + `sw.js` make the site installable on a phone's home screen (standalone, dice icon) and serve the app shell offline (network-first, cache fallback).
 
 Clicking a mode button again re-rolls the activity and restarts the timer.
 
@@ -40,8 +42,11 @@ The sheet must be shared as **"anyone with the link can view"** for the page to 
 
 | File | Purpose |
 |------|---------|
-| `index.html` | The whole app (markup, styles, logic) |
+| `index.html` | The app (markup + logic) |
+| `styles.css` | The stylesheet |
 | `SF-cum.mp3` | Sound played when the timer ends |
+| `manifest.json` / `sw.js` | PWA install + offline app shell |
+| `icon-*.png` | App icons (home screen / Apple touch) |
 | `serve.sh` | Start a local server to preview the site |
 | `test.sh` | Smoke-test the site locally |
 
@@ -60,7 +65,7 @@ Then open <http://localhost:8001>. Edit `index.html` and refresh — no build st
 ./test.sh
 ```
 
-Starts a temporary server, checks that `index.html` is served, and validates that the Google Sheet is reachable and contains `soft` and `hard` entries (needs network access). Exits non-zero on failure.
+Starts a temporary server, checks that the page, PWA assets and mp3 are served, and validates the Google Sheet: reachable, contains `soft` and `hard` entries, and per-row sanity (level, player, min/max, keyword). Incomplete rows that the app tolerates are reported as warnings; only real breakage fails the test.
 
 ## Deployment
 

@@ -6,154 +6,9 @@
 <meta name="theme-color" content="#0f172a">
 <title>Donne-moi un gage</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎲</text></svg>">
-<style>
-  :root {
-    --bg: #0f172a;
-    --card: #1e293b;
-    --text: #e2e8f0;
-    --muted: #94a3b8;
-    --soft: #38bdf8;
-    --hard: #f472b6;
-    --done: #4ade80;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 1rem;
-  }
-  .card {
-    background: var(--card);
-    border-radius: 1rem;
-    padding: 2.5rem 2rem;
-    max-width: 32rem;
-    width: 100%;
-    text-align: center;
-    box-shadow: 0 10px 30px rgba(0,0,0,.4);
-  }
-  h1 { font-size: 1.4rem; margin-bottom: 1.5rem; }
-  .player-row {
-    display: flex;
-    flex-direction: column;
-    gap: 0.6rem;
-    margin-bottom: 1.5rem;
-  }
-  .player-label {
-    color: var(--muted);
-    font-size: 0.95rem;
-  }
-  .player-toggle {
-    display: flex;
-    background: rgba(148, 163, 184, .15);
-    border-radius: 999px;
-    padding: 4px;
-  }
-  .ptoggle {
-    flex: 1;
-    white-space: nowrap;
-    padding: 0.5rem 1rem;
-    font-size: 0.95rem;
-    font-weight: 600;
-    border-radius: 999px;
-    background: transparent;
-    color: var(--muted);
-  }
-  .ptoggle:hover { filter: none; color: var(--text); }
-  .ptoggle.active { background: #475569; color: var(--text); }
-  .keywords {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 0.5rem;
-    margin-bottom: 1.25rem;
-  }
-  .kw {
-    flex: none;
-    font-size: 0.85rem;
-    font-weight: 600;
-    padding: 0.55rem 1rem; /* thumb-friendly touch target */
-    border-radius: 999px;
-    background: transparent;
-    border: 1px solid var(--muted);
-    color: var(--muted);
-    opacity: 0.55;
-  }
-  .kw:hover { filter: none; opacity: 1; }
-  .kw.active {
-    background: var(--soft);
-    color: #0f172a;
-    border-color: transparent;
-    opacity: 1;
-  }
-  .kw.active::before { content: "✓ "; }
-  .buttons { display: flex; gap: 1rem; justify-content: center; margin-bottom: 2rem; }
-  button {
-    flex: 1;
-    padding: 0.9rem 1rem;
-    font-size: 1.1rem;
-    font-weight: 600;
-    border: none;
-    border-radius: 0.6rem;
-    cursor: pointer;
-    color: #0f172a;
-    transition: transform .1s ease, filter .15s ease;
-  }
-  button:hover { filter: brightness(1.15); }
-  button:active { transform: scale(.96); }
-  button:disabled { filter: grayscale(.6); cursor: not-allowed; }
-  #btn-soft { background: var(--soft); }
-  #btn-hard { background: var(--hard); }
-  #result {
-    display: none;
-    flex-direction: column;
-    gap: 0.75rem;
-  }
-  #result.visible { display: flex; }
-  #item { font-size: 1.15rem; font-weight: 700; line-height: 1.4; }
-  .timer-row {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.75rem;
-  }
-  #countdown {
-    font-size: 3rem;
-    font-weight: 700;
-    font-variant-numeric: tabular-nums;
-  }
-  #countdown.done { color: var(--done); }
-  #btn-plus, #btn-pause {
-    flex: none;
-    font-size: 0.85rem;
-    font-weight: 600;
-    padding: 0.55rem 0.8rem;
-    border-radius: 0.5rem;
-    background: transparent;
-    border: 1px solid var(--muted);
-    color: var(--text);
-  }
-  #btn-plus:hover, #btn-pause:hover { border-color: var(--text); filter: none; }
-  #status { color: var(--muted); font-size: 1rem; }
-  .badge {
-    align-self: center;
-    font-size: .75rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: .08em;
-    padding: .25rem .7rem;
-    border-radius: 999px;
-    color: #0f172a;
-  }
-  .badge.soft { background: var(--soft); }
-  .badge.hard { background: var(--hard); }
-  #error { color: #f87171; display: none; }
-  #note { color: var(--muted); font-size: 0.85rem; display: none; margin-bottom: 1rem; }
-</style>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <div class="card">
@@ -163,11 +18,12 @@
         <button id="player-homme" class="ptoggle" aria-pressed="false">un homme</button>
         <button id="player-femme" class="ptoggle" aria-pressed="false">une femme</button>
       </div>
+      <button id="btn-alternate" class="alt-toggle" aria-pressed="false" title="Alterner automatiquement le joueur à chaque gage">🔁 chacun son tour</button>
     </div>
-    <h1>Donne moi un gage</h1>
     <div id="keywords" class="keywords" role="group" aria-label="Filtres"></div>
     <div class="buttons">
       <button id="btn-soft">Soft</button>
+      <button id="btn-surprise" title="Soft ou hard, au hasard">Surprise</button>
       <button id="btn-hard">Hard</button>
     </div>
     <p id="error"></p>
@@ -176,7 +32,13 @@
       <span class="badge" id="badge"></span>
       <div id="item"></div>
       <div class="timer-row">
-        <div id="countdown"></div>
+        <div class="ring-wrap" id="ring-wrap">
+          <svg viewBox="0 0 120 120" aria-hidden="true">
+            <circle class="ring-bg" cx="60" cy="60" r="54"/>
+            <circle class="ring-fg" id="ring" cx="60" cy="60" r="54"/>
+          </svg>
+          <div id="countdown"></div>
+        </div>
         <button id="btn-pause" title="Pause / reprendre" aria-label="Pause ou reprendre le minuteur">⏸</button>
         <button id="btn-plus" title="Ajouter une minute" aria-label="Ajouter une minute">+ 1 min</button>
       </div>
@@ -212,6 +74,11 @@
   let paused = false;
   let wakeLock = null;
   let drawn = new Set(JSON.parse(localStorage.getItem("drawnGages") || "[]"));
+  let totalSeconds = 0;
+  let alternate = localStorage.getItem("alternate") === "1";
+  let hasPicked = false;
+  let replaceArmed = false;
+  let replaceTimer = null;
 
   const badge = document.getElementById("badge");
   const itemEl = document.getElementById("item");
@@ -227,6 +94,11 @@
   const btnFemme = document.getElementById("player-femme");
   const keywordsEl = document.getElementById("keywords");
   const noteEl = document.getElementById("note");
+  const btnSurprise = document.getElementById("btn-surprise");
+  const btnAlternate = document.getElementById("btn-alternate");
+  const ringEl = document.getElementById("ring");
+  const ringWrap = document.getElementById("ring-wrap");
+  const RING_CIRC = 2 * Math.PI * 54;
 
   function parseCsv(text) {
     const rows = [];
@@ -293,8 +165,10 @@
            Array.isArray(data.hard) && data.hard.length > 0;
   }
 
-  const CACHE_KEY = "sheetCsv";
-  const CACHE_TIME_KEY = "sheetCsvTime";
+  // Cache keys are bound to the sheet: switching SHEET_ID never shows
+  // stale data from a previous sheet.
+  const CACHE_KEY = "sheetCsv:" + SHEET_ID;
+  const CACHE_TIME_KEY = "sheetCsvTime:" + SHEET_ID;
   let noteTimer = null;
 
   function showNote(message, autoHide) {
@@ -404,13 +278,20 @@
     if (document.visibilityState === "visible" && timerId) acquireWakeLock();
   });
 
+  function updateRing() {
+    const frac = totalSeconds > 0 ? Math.max(remaining, 0) / totalSeconds : 0;
+    ringEl.style.strokeDashoffset = String(RING_CIRC * (1 - frac));
+  }
+
   function tick() {
     remaining--;
     countdownEl.textContent = formatTime(Math.max(remaining, 0));
+    updateRing();
     if (remaining <= 0) {
       clearInterval(timerId);
       timerId = null;
       countdownEl.classList.add("done");
+      ringWrap.classList.add("done");
       statusEl.textContent = "Time's up! Well done 🎉";
       btnPause.disabled = true;
       releaseWakeLock();
@@ -488,14 +369,30 @@
   function pick(key) {
     if (!activities) return;
     ensureAudio();
+    // Guard against accidental taps: replacing a running gage takes two
+    // clicks within 3 seconds.
+    if (timerId && !replaceArmed) {
+      replaceArmed = true;
+      showNote("Un gage est en cours — reclique pour le remplacer.", true);
+      clearTimeout(replaceTimer);
+      replaceTimer = setTimeout(() => { replaceArmed = false; }, 3000);
+      return;
+    }
+    replaceArmed = false;
+    // "Chacun son tour": switch player automatically for each new gage.
+    const p = (alternate && hasPicked)
+      ? (player === "homme" ? "femme" : "homme")
+      : player;
     const list = (activities[key] || []).filter(g =>
-      (g.player === "both" || g.player === player) &&
+      (g.player === "both" || g.player === p) &&
       (!g.keyword || selectedKeywords.has(g.keyword)));
     if (!list.length) {
       errorEl.textContent = "Aucun gage ne correspond à cette sélection.";
       errorEl.style.display = "block";
       return;
     }
+    if (p !== player) setPlayer(p);
+    hasPicked = true;
     errorEl.style.display = "none";
     // Avoid repeats: draw among the gages not yet seen; once the whole
     // pool for this selection has been drawn, start a fresh round.
@@ -515,11 +412,14 @@
     if (hi < lo) { const t = lo; lo = hi; hi = t; }
     const minutes = lo + Math.floor(Math.random() * (hi - lo + 1));
     remaining = minutes * 60;
+    totalSeconds = remaining;
 
     badge.textContent = key;
     badge.className = "badge " + key;
     itemEl.textContent = gage.text;
     countdownEl.classList.remove("done");
+    ringWrap.className = "ring-wrap" + (key === "hard" ? " hard" : "");
+    updateRing();
     countdownEl.textContent = formatTime(remaining);
     statusEl.textContent = minutes + " minute" + (minutes > 1 ? "s" : "") + " — go!" +
       (newRound ? " (tous les gages ont été tirés, nouvelle tournée)" : "");
@@ -531,7 +431,10 @@
   function addMinute() {
     if (!resultEl.classList.contains("visible")) return;
     remaining += 60;
+    totalSeconds += 60;
     countdownEl.classList.remove("done");
+    ringWrap.classList.remove("done");
+    updateRing();
     countdownEl.textContent = formatTime(remaining);
     if (!timerId && !paused) {
       statusEl.textContent = "One more minute — go!";
@@ -539,14 +442,37 @@
     }
   }
 
+  function setAlternate(on) {
+    alternate = on;
+    localStorage.setItem("alternate", on ? "1" : "0");
+    btnAlternate.classList.toggle("active", on);
+    btnAlternate.setAttribute("aria-pressed", String(on));
+  }
+
+  function surprise() {
+    if (!activities) return;
+    const levels = ["soft", "hard"].filter(k => (activities[k] || []).length);
+    if (!levels.length) return;
+    pick(levels[Math.floor(Math.random() * levels.length)]);
+  }
+
   btnSoft.addEventListener("click", () => pick("soft"));
   btnHard.addEventListener("click", () => pick("hard"));
+  btnSurprise.addEventListener("click", surprise);
   btnPlus.addEventListener("click", addMinute);
   btnPause.addEventListener("click", togglePause);
   btnHomme.addEventListener("click", () => setPlayer("homme"));
   btnFemme.addEventListener("click", () => setPlayer("femme"));
+  btnAlternate.addEventListener("click", () => setAlternate(!alternate));
   setPlayer(player);
+  setAlternate(alternate);
   loadData();
+
+  // PWA: offline support for the app shell (the sheet data is already
+  // cached in localStorage by loadData).
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("sw.js").catch(() => {});
+  }
 </script>
 </body>
 </html>
