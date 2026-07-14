@@ -37,18 +37,16 @@
   h1 { font-size: 1.4rem; margin-bottom: 1.5rem; }
   .player-row {
     display: flex;
-    align-items: center;
-    gap: 0.75rem;
+    flex-direction: column;
+    gap: 0.6rem;
     margin-bottom: 1.5rem;
   }
   .player-label {
     color: var(--muted);
     font-size: 0.95rem;
-    white-space: nowrap;
   }
   .player-toggle {
     display: flex;
-    flex: 1;
     background: rgba(148, 163, 184, .15);
     border-radius: 999px;
     padding: 4px;
@@ -91,12 +89,6 @@
     opacity: 1;
   }
   .kw.active::before { content: "✓ "; }
-  .kw-count {
-    align-self: center;
-    color: var(--muted);
-    font-size: 0.8rem;
-    white-space: nowrap;
-  }
   .buttons { display: flex; gap: 1rem; justify-content: center; margin-bottom: 2rem; }
   button {
     flex: 1;
@@ -163,7 +155,7 @@
 <body>
   <div class="card">
     <div class="player-row">
-      <span class="player-label">Donner un gage à ...</span>
+      <span class="player-label">Donne un gage à ...</span>
       <div class="player-toggle" role="group" aria-label="Player">
         <button id="player-homme" class="ptoggle">un homme</button>
         <button id="player-femme" class="ptoggle">une femme</button>
@@ -196,14 +188,22 @@
   // supported; such entries apply to both players with default durations.
   const SHEET_ID = "1eSbNFqS38as8rDRG5yLwZljaFEV1aUk-dR4_718YBMM";
   const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/" + SHEET_ID + "/gviz/tq?tqx=out:csv";
-  const MIN_MINUTES = 2;
+  const MIN_MINUTES = 1;
   const MAX_MINUTES = 10;
+
+  // Sound played when the timer ends: the segment [START, END] (seconds)
+  // of the mp3 below. Adjust the two timestamps to taste.
+  const END_SOUND_URL = "SF-cum.mp3";
+  const END_SOUND_START = 0;
+  const END_SOUND_END = 3;
 
   let activities = null;
   let timerId = null;
   let remaining = 0;
   let player = localStorage.getItem("player") || "homme";
   let selectedKeywords = new Set();
+  let endSound = null;
+  let endSoundStopper = null;
 
   const badge = document.getElementById("badge");
   const itemEl = document.getElementById("item");
@@ -307,6 +307,33 @@
     return m + ":" + String(s).padStart(2, "0");
   }
 
+  // Audio must be unlocked during a user gesture (autoplay policy), so
+  // pick() calls this: it loads the mp3 and does a muted play/pause to
+  // authorize later playback when the timer ends.
+  function ensureAudio() {
+    if (endSound) return;
+    endSound = new Audio(END_SOUND_URL);
+    endSound.preload = "auto";
+    endSound.muted = true;
+    const p = endSound.play();
+    if (p) p.then(() => {
+      endSound.pause();
+      endSound.muted = false;
+      endSound.currentTime = 0;
+    }).catch(() => { endSound.muted = false; });
+  }
+
+  // Play the [END_SOUND_START, END_SOUND_END] segment of the mp3.
+  function playEndSound() {
+    if (!endSound) return;
+    clearTimeout(endSoundStopper);
+    endSound.currentTime = END_SOUND_START;
+    endSound.play().catch(() => {});
+    endSoundStopper = setTimeout(() => {
+      endSound.pause();
+    }, (END_SOUND_END - END_SOUND_START) * 1000);
+  }
+
   function tick() {
     remaining--;
     countdownEl.textContent = formatTime(Math.max(remaining, 0));
@@ -315,6 +342,7 @@
       timerId = null;
       countdownEl.classList.add("done");
       statusEl.textContent = "Time's up! Well done 🎉";
+      playEndSound();
     }
   }
 
@@ -332,11 +360,6 @@
     }
     selectedKeywords = new Set(keywords);
     keywordsEl.innerHTML = "";
-    const countEl = document.createElement("span");
-    countEl.className = "kw-count";
-    const updateCount = () => {
-      countEl.textContent = "(" + selectedKeywords.size + " selected)";
-    };
     for (const kw of keywords) {
       const btn = document.createElement("button");
       btn.className = "kw active";
@@ -345,12 +368,9 @@
         if (selectedKeywords.has(kw)) selectedKeywords.delete(kw);
         else selectedKeywords.add(kw);
         btn.classList.toggle("active", selectedKeywords.has(kw));
-        updateCount();
       });
       keywordsEl.appendChild(btn);
     }
-    keywordsEl.appendChild(countEl);
-    updateCount();
   }
 
   function setPlayer(p) {
@@ -362,6 +382,7 @@
 
   function pick(key) {
     if (!activities) return;
+    ensureAudio();
     const list = (activities[key] || []).filter(g =>
       (g.player === "both" || g.player === player) &&
       (!g.keyword || selectedKeywords.has(g.keyword)));

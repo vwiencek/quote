@@ -10,7 +10,7 @@
 4. The page answers with:
    - a random activity matching your level, filtered by player (entries marked `both` apply to everyone) and by the selected keywords
    - a random whole number of minutes drawn between that activity's `min` and `max`
-5. A **countdown timer** starts from that duration down to `0:00`, so you can actually measure the time spent on the task. When it reaches zero the timer turns green and shows "Time's up!". The **+ 1 min** button next to the timer adds a minute (and restarts the countdown if time was already up).
+5. A **countdown timer** starts from that duration down to `0:00`, so you can actually measure the time spent on the task. When it reaches zero the timer turns green, shows "Time's up!" and plays a short sound — a segment of `SF-cum.mp3` defined by the `END_SOUND_START` / `END_SOUND_END` constants (in seconds) at the top of the script in `index.html`. The **+ 1 min** button next to the timer adds a minute (and restarts the countdown if time was already up).
 
 Clicking a mode button again re-rolls the activity and restarts the timer.
 
@@ -35,6 +35,7 @@ The sheet must be shared as **"anyone with the link can view"** for the page to 
 | File | Purpose |
 |------|---------|
 | `index.html` | The whole app (markup, styles, logic) |
+| `SF-cum.mp3` | Sound played when the timer ends |
 | `serve.sh` | Start a local server to preview the site |
 | `test.sh` | Smoke-test the site locally |
 
