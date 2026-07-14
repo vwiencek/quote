@@ -83,6 +83,12 @@
   }
   .kw:hover { filter: none; color: var(--text); border-color: var(--text); }
   .kw.active { background: #475569; color: var(--text); border-color: transparent; }
+  .kw-count {
+    align-self: center;
+    color: var(--muted);
+    font-size: 0.8rem;
+    white-space: nowrap;
+  }
   .buttons { display: flex; gap: 1rem; justify-content: center; margin-bottom: 2rem; }
   button {
     flex: 1;
@@ -149,7 +155,7 @@
 <body>
   <div class="card">
     <div class="player-row">
-      <span class="player-label">Je suis ...</span>
+      <span class="player-label">Donner un gage à ...</span>
       <div class="player-toggle" role="group" aria-label="Player">
         <button id="player-homme" class="ptoggle">un homme</button>
         <button id="player-femme" class="ptoggle">une femme</button>
@@ -318,6 +324,11 @@
     }
     selectedKeywords = new Set(keywords);
     keywordsEl.innerHTML = "";
+    const countEl = document.createElement("span");
+    countEl.className = "kw-count";
+    const updateCount = () => {
+      countEl.textContent = "(" + selectedKeywords.size + " selected)";
+    };
     for (const kw of keywords) {
       const btn = document.createElement("button");
       btn.className = "kw active";
@@ -326,9 +337,12 @@
         if (selectedKeywords.has(kw)) selectedKeywords.delete(kw);
         else selectedKeywords.add(kw);
         btn.classList.toggle("active", selectedKeywords.has(kw));
+        updateCount();
       });
       keywordsEl.appendChild(btn);
     }
+    keywordsEl.appendChild(countEl);
+    updateCount();
   }
 
   function setPlayer(p) {
