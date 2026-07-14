@@ -81,9 +81,16 @@
     background: transparent;
     border: 1px solid var(--muted);
     color: var(--muted);
+    opacity: 0.55;
   }
-  .kw:hover { filter: none; color: var(--text); border-color: var(--text); }
-  .kw.active { background: #475569; color: var(--text); border-color: transparent; }
+  .kw:hover { filter: none; opacity: 1; }
+  .kw.active {
+    background: var(--soft);
+    color: #0f172a;
+    border-color: transparent;
+    opacity: 1;
+  }
+  .kw.active::before { content: "✓ "; }
   .kw-count {
     align-self: center;
     color: var(--muted);
