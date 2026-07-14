@@ -16,6 +16,7 @@ Extra behavior:
 
 - **No repeats**: drawn gages are remembered (localStorage) and not drawn again until the whole pool for the current selection has been used, then a new round starts automatically.
 - **Screen stays awake** while the countdown runs (Screen Wake Lock API, where supported), so a phone doesn't lock mid-gage.
+- **Sheet cache (stale-while-revalidate)**: the last CSV is kept in localStorage and rendered instantly on load, then the sheet is always re-fetched in the background — if it changed, data and keyword chips refresh in place (keeping your selection) with a "données mises à jour" note; if the network is down, the page runs on the cached copy and says so.
 
 Clicking a mode button again re-rolls the activity and restarts the timer.
 

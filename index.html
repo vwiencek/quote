@@ -150,6 +150,7 @@
   .badge.soft { background: var(--soft); }
   .badge.hard { background: var(--hard); }
   #error { color: #f87171; display: none; }
+  #note { color: var(--muted); font-size: 0.85rem; display: none; margin-bottom: 1rem; }
 </style>
 </head>
 <body>
@@ -168,6 +169,7 @@
       <button id="btn-hard">Hard</button>
     </div>
     <p id="error"></p>
+    <p id="note"></p>
     <div id="result">
       <span class="badge" id="badge"></span>
       <div id="item"></div>
@@ -222,6 +224,7 @@
   const btnHomme = document.getElementById("player-homme");
   const btnFemme = document.getElementById("player-femme");
   const keywordsEl = document.getElementById("keywords");
+  const noteEl = document.getElementById("note");
 
   function parseCsv(text) {
     const rows = [];
@@ -288,21 +291,64 @@
            Array.isArray(data.hard) && data.hard.length > 0;
   }
 
+  const CACHE_KEY = "sheetCsv";
+  const CACHE_TIME_KEY = "sheetCsvTime";
+  let noteTimer = null;
+
+  function showNote(message, autoHide) {
+    noteEl.textContent = message;
+    noteEl.style.display = "block";
+    clearTimeout(noteTimer);
+    if (autoHide) noteTimer = setTimeout(() => { noteEl.style.display = "none"; }, 6000);
+  }
+
+  function applyData(text) {
+    const data = csvToActivities(text);
+    if (!isValid(data)) return false;
+    activities = data;
+    renderKeywords();
+    return true;
+  }
+
+  function cacheAge() {
+    const t = parseInt(localStorage.getItem(CACHE_TIME_KEY), 10);
+    if (!t) return "";
+    const days = Math.floor((Date.now() - t) / 86400000);
+    if (days < 1) return "";
+    return " datant d'il y a " + days + " jour" + (days > 1 ? "s" : "");
+  }
+
+  // Stale-while-revalidate: render instantly from the cached copy, then
+  // always re-fetch the sheet; the network version wins when it differs.
   async function loadData() {
+    const cached = localStorage.getItem(CACHE_KEY);
+    if (cached && applyData(cached)) {
+      console.info("Activities loaded from cache");
+    }
     try {
       const res = await fetch(SHEET_CSV_URL);
       if (!res.ok) throw new Error("HTTP " + res.status);
-      const data = csvToActivities(await res.text());
-      if (!isValid(data)) throw new Error("missing soft/hard entries");
-      activities = data;
-      renderKeywords();
+      const text = await res.text();
+      if (text === cached) {
+        console.info("Sheet unchanged since last visit");
+        return;
+      }
+      if (!applyData(text)) throw new Error("missing soft/hard entries");
+      localStorage.setItem(CACHE_KEY, text);
+      localStorage.setItem(CACHE_TIME_KEY, String(Date.now()));
+      if (cached) showNote("Données mises à jour depuis la feuille Google.", true);
       console.info("Activities loaded from Google Sheet");
     } catch (err) {
-      btnSoft.disabled = true;
-      btnHard.disabled = true;
-      errorEl.textContent = "Could not load activities from the Google Sheet (" +
-        err.message + "). Check that the sheet is shared as \"anyone with the link can view\".";
-      errorEl.style.display = "block";
+      if (activities) {
+        showNote("Feuille Google injoignable — utilisation des données en cache" + cacheAge() + ".");
+        console.warn("Sheet unreachable (" + err.message + "), using cached data");
+      } else {
+        btnSoft.disabled = true;
+        btnHard.disabled = true;
+        errorEl.textContent = "Could not load activities from the Google Sheet (" +
+          err.message + "). Check that the sheet is shared as \"anyone with the link can view\".";
+        errorEl.style.display = "block";
+      }
     }
   }
 
@@ -394,6 +440,8 @@
     }
   }
 
+  let keywordUniverse = null;
+
   function renderKeywords() {
     const keywords = [];
     for (const key of Object.keys(activities)) {
@@ -401,11 +449,19 @@
         if (g.keyword && !keywords.includes(g.keyword)) keywords.push(g.keyword);
       }
     }
-    selectedKeywords = new Set(keywords);
+    if (keywordUniverse) {
+      // Re-render after a background data refresh: keep the user's
+      // choices; keywords that are new to the sheet start selected.
+      selectedKeywords = new Set(keywords.filter(kw =>
+        keywordUniverse.has(kw) ? selectedKeywords.has(kw) : true));
+    } else {
+      selectedKeywords = new Set(keywords);
+    }
+    keywordUniverse = new Set(keywords);
     keywordsEl.innerHTML = "";
     for (const kw of keywords) {
       const btn = document.createElement("button");
-      btn.className = "kw active";
+      btn.className = "kw" + (selectedKeywords.has(kw) ? " active" : "");
       btn.textContent = kw;
       btn.addEventListener("click", () => {
         if (selectedKeywords.has(kw)) selectedKeywords.delete(kw);
