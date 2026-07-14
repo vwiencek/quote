@@ -35,6 +35,24 @@
     box-shadow: 0 10px 30px rgba(0,0,0,.4);
   }
   h1 { font-size: 1.4rem; margin-bottom: 1.5rem; }
+  .player-toggle {
+    display: flex;
+    background: rgba(148, 163, 184, .15);
+    border-radius: 999px;
+    padding: 4px;
+    margin-bottom: 1.5rem;
+  }
+  .ptoggle {
+    flex: 1;
+    padding: 0.5rem 1rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--muted);
+  }
+  .ptoggle:hover { filter: none; color: var(--text); }
+  .ptoggle.active { background: #475569; color: var(--text); }
   .buttons { display: flex; gap: 1rem; justify-content: center; margin-bottom: 2rem; }
   button {
     flex: 1;
@@ -100,6 +118,10 @@
 </head>
 <body>
   <div class="card">
+    <div class="player-toggle" role="group" aria-label="Player">
+      <button id="player-homme" class="ptoggle">Homme</button>
+      <button id="player-femme" class="ptoggle">Femme</button>
+    </div>
     <h1>Pick your mode</h1>
     <div class="buttons">
       <button id="btn-soft">Soft</button>
@@ -119,10 +141,11 @@
 
 <script>
   // Data comes from a Google Sheet shared as "anyone with the link can view".
-  // Two formats are supported:
-  //   - row-based: columns "gage" (text) and "type" (soft/hard), one entry per row
-  //   - column-based: one "soft" column and one "hard" column
-  const SHEET_ID = "1wRKkiy9z9AjNeNns6jI5iRtYi6_SWLlvO3NfWknuJYI";
+  // Row-based format: columns "gage" (text), "player" (homme/femme/both),
+  // "min" / "max" (duration bounds in minutes) and "type" (soft/hard).
+  // A column-based layout (one soft column, one hard column) is still
+  // supported; such entries apply to both players with default durations.
+  const SHEET_ID = "1eSbNFqS38as8rDRG5yLwZljaFEV1aUk-dR4_718YBMM";
   const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/" + SHEET_ID + "/gviz/tq?tqx=out:csv";
   const MIN_MINUTES = 2;
   const MAX_MINUTES = 10;
@@ -130,6 +153,7 @@
   let activities = null;
   let timerId = null;
   let remaining = 0;
+  let player = localStorage.getItem("player") || "homme";
 
   const badge = document.getElementById("badge");
   const itemEl = document.getElementById("item");
@@ -140,6 +164,8 @@
   const btnSoft = document.getElementById("btn-soft");
   const btnHard = document.getElementById("btn-hard");
   const btnPlus = document.getElementById("btn-plus");
+  const btnHomme = document.getElementById("player-homme");
+  const btnFemme = document.getElementById("player-femme");
 
   function parseCsv(text) {
     const rows = [];
@@ -163,17 +189,26 @@
   function csvToActivities(text) {
     const rows = parseCsv(text);
     const headers = rows[0].map(h => h.trim().toLowerCase());
-    const typeIdx = headers.indexOf("type");
+    const idx = {};
+    headers.forEach((h, i) => { if (h && !(h in idx)) idx[h] = i; });
     const data = {};
 
-    if (typeIdx !== -1) {
-      // Row-based format: a text column + a "type" column (soft/hard).
-      const textIdx = headers.findIndex((h, i) => h && i !== typeIdx);
+    if ("type" in idx) {
+      // Row-based format: one entry per row.
+      const textIdx = "gage" in idx
+        ? idx.gage
+        : headers.findIndex((h, i) => h && i !== idx.type);
+      const cell = (r, i) => (i !== undefined && r[i] !== undefined ? r[i] : "").trim();
       for (const r of rows.slice(1)) {
-        const value = (r[textIdx] || "").trim();
-        const key = (r[typeIdx] || "").trim().toLowerCase();
+        const value = cell(r, textIdx);
+        const key = cell(r, idx.type).toLowerCase();
         if (!value || !key) continue;
-        (data[key] = data[key] || []).push(value);
+        (data[key] = data[key] || []).push({
+          text: value,
+          player: cell(r, idx.player).toLowerCase() || "both",
+          min: parseInt(cell(r, idx.min), 10),
+          max: parseInt(cell(r, idx.max), 10),
+        });
       }
     } else {
       // Column-based format: one column per key.
@@ -181,7 +216,9 @@
       for (const r of rows.slice(1)) {
         r.forEach((value, i) => {
           const key = headers[i];
-          if (key && value && value.trim()) data[key].push(value.trim());
+          if (key && value && value.trim()) {
+            data[key].push({ text: value.trim(), player: "both", min: NaN, max: NaN });
+          }
         });
       }
     }
@@ -232,16 +269,32 @@
     timerId = setInterval(tick, 1000);
   }
 
+  function setPlayer(p) {
+    player = p;
+    localStorage.setItem("player", p);
+    btnHomme.classList.toggle("active", p === "homme");
+    btnFemme.classList.toggle("active", p === "femme");
+  }
+
   function pick(key) {
     if (!activities) return;
-    const list = activities[key];
-    const item = list[Math.floor(Math.random() * list.length)];
-    const minutes = MIN_MINUTES + Math.floor(Math.random() * (MAX_MINUTES - MIN_MINUTES + 1));
+    const list = (activities[key] || []).filter(g => g.player === "both" || g.player === player);
+    if (!list.length) {
+      errorEl.textContent = "No gage available for this player/mode combination.";
+      errorEl.style.display = "block";
+      return;
+    }
+    errorEl.style.display = "none";
+    const gage = list[Math.floor(Math.random() * list.length)];
+    let lo = Number.isInteger(gage.min) ? gage.min : MIN_MINUTES;
+    let hi = Number.isInteger(gage.max) ? gage.max : MAX_MINUTES;
+    if (hi < lo) { const t = lo; lo = hi; hi = t; }
+    const minutes = lo + Math.floor(Math.random() * (hi - lo + 1));
     remaining = minutes * 60;
 
     badge.textContent = key;
     badge.className = "badge " + key;
-    itemEl.textContent = item;
+    itemEl.textContent = gage.text;
     countdownEl.classList.remove("done");
     countdownEl.textContent = formatTime(remaining);
     statusEl.textContent = minutes + " minute" + (minutes > 1 ? "s" : "") + " — go!";
@@ -264,6 +317,9 @@
   btnSoft.addEventListener("click", () => pick("soft"));
   btnHard.addEventListener("click", () => pick("hard"));
   btnPlus.addEventListener("click", addMinute);
+  btnHomme.addEventListener("click", () => setPlayer("homme"));
+  btnFemme.addEventListener("click", () => setPlayer("femme"));
+  setPlayer(player);
   loadData();
 </script>
 </body>
