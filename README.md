@@ -6,18 +6,28 @@
 
 1. You pick a mode: **Soft** or **Hard**.
 2. The page answers with:
-   - a random activity from the list matching your mode (loaded from [`quotes.json`](quotes.json))
+   - a random activity from the list matching your mode
    - a random duration between **2 and 10 minutes**
-3. A **countdown timer** starts from that duration down to `0:00`, so you can actually measure the time spent on the task. When it reaches zero the timer turns green and shows "Time's up!".
+3. A **countdown timer** starts from that duration down to `0:00`, so you can actually measure the time spent on the task. When it reaches zero the timer turns green and shows "Time's up!". The **+ 1 min** button next to the timer adds a minute (and restarts the countdown if time was already up).
 
-Clicking a button again re-rolls the activity and restarts the timer.
+Clicking a mode button again re-rolls the activity and restarts the timer.
+
+## Where the data comes from
+
+Activities are loaded at page load, in this order:
+
+1. **Google Sheet** [`quote-activities`](https://docs.google.com/spreadsheets/d/1eukn-3n_L_6bDl1u_1L3UQpdtpK19ZijChwATly6lQA/edit) — two columns, `soft` and `hard`, one activity per row. Edit the sheet and refresh the page: no deploy needed.
+   The sheet must be shared as **"anyone with the link can view"** for the page to read it (it is fetched as CSV from the browser).
+2. **`quotes.json`** (fallback) — used automatically when the sheet is unreachable or malformed.
+
+The browser console says which source was used.
 
 ## Files
 
 | File | Purpose |
 |------|---------|
 | `index.html` | The whole app (markup, styles, logic) |
-| `quotes.json` | The activity lists — edit this file to change the `soft` / `hard` items |
+| `quotes.json` | Fallback activity lists, used when the Google Sheet is unreachable |
 | `serve.sh` | Start a local server to preview the site |
 | `test.sh` | Smoke-test the site locally |
 

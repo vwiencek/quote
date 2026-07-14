@@ -118,8 +118,12 @@
   </div>
 
 <script>
-  // Data lives in quotes.json — edit that file to change the lists.
-  const DATA_URL = "quotes.json";
+  // Data comes from the "quote-activities" Google Sheet (columns: soft, hard).
+  // The sheet must be shared as "anyone with the link can view".
+  // quotes.json is the fallback when the sheet is unreachable.
+  const SHEET_ID = "1eukn-3n_L_6bDl1u_1L3UQpdtpK19ZijChwATly6lQA";
+  const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/" + SHEET_ID + "/gviz/tq?tqx=out:csv";
+  const FALLBACK_URL = "quotes.json";
   const MIN_MINUTES = 2;
   const MAX_MINUTES = 10;
 
@@ -137,15 +141,68 @@
   const btnHard = document.getElementById("btn-hard");
   const btnPlus = document.getElementById("btn-plus");
 
+  function parseCsv(text) {
+    const rows = [];
+    let row = [], field = "", inQuotes = false;
+    for (let i = 0; i < text.length; i++) {
+      const c = text[i];
+      if (inQuotes) {
+        if (c === '"') {
+          if (text[i + 1] === '"') { field += '"'; i++; }
+          else inQuotes = false;
+        } else field += c;
+      } else if (c === '"') inQuotes = true;
+      else if (c === ",") { row.push(field); field = ""; }
+      else if (c === "\n") { row.push(field); rows.push(row); row = []; field = ""; }
+      else if (c !== "\r") field += c;
+    }
+    if (field !== "" || row.length) { row.push(field); rows.push(row); }
+    return rows;
+  }
+
+  function csvToActivities(text) {
+    const rows = parseCsv(text);
+    const headers = rows[0].map(h => h.trim().toLowerCase());
+    const data = {};
+    headers.forEach(h => { if (h) data[h] = []; });
+    for (const r of rows.slice(1)) {
+      r.forEach((value, i) => {
+        const key = headers[i];
+        if (key && value && value.trim()) data[key].push(value.trim());
+      });
+    }
+    return data;
+  }
+
+  function isValid(data) {
+    return data && Array.isArray(data.soft) && data.soft.length > 0 &&
+           Array.isArray(data.hard) && data.hard.length > 0;
+  }
+
   async function loadData() {
     try {
-      const res = await fetch(DATA_URL);
+      const res = await fetch(SHEET_CSV_URL);
       if (!res.ok) throw new Error("HTTP " + res.status);
-      activities = await res.json();
+      const data = csvToActivities(await res.text());
+      if (!isValid(data)) throw new Error("missing soft/hard columns");
+      activities = data;
+      console.info("Activities loaded from Google Sheet");
+      return;
+    } catch (err) {
+      console.warn("Google Sheet unavailable (" + err.message + "), falling back to " + FALLBACK_URL);
+    }
+    try {
+      const res = await fetch(FALLBACK_URL);
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      const data = await res.json();
+      if (!isValid(data)) throw new Error("missing soft/hard keys");
+      activities = data;
+      console.info("Activities loaded from fallback " + FALLBACK_URL);
     } catch (err) {
       btnSoft.disabled = true;
       btnHard.disabled = true;
-      errorEl.textContent = "Could not load " + DATA_URL + " (" + err.message + "). " +
+      errorEl.textContent = "Could not load activities from the Google Sheet nor " +
+        FALLBACK_URL + " (" + err.message + "). " +
         "Serve the site over HTTP (./serve.sh) — fetch does not work from file://";
       errorEl.style.display = "block";
     }
