@@ -35,12 +35,23 @@
     box-shadow: 0 10px 30px rgba(0,0,0,.4);
   }
   h1 { font-size: 1.4rem; margin-bottom: 1.5rem; }
+  .player-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+  }
+  .player-label {
+    color: var(--muted);
+    font-size: 0.95rem;
+    white-space: nowrap;
+  }
   .player-toggle {
     display: flex;
+    flex: 1;
     background: rgba(148, 163, 184, .15);
     border-radius: 999px;
     padding: 4px;
-    margin-bottom: 1.5rem;
   }
   .ptoggle {
     flex: 1;
@@ -53,6 +64,25 @@
   }
   .ptoggle:hover { filter: none; color: var(--text); }
   .ptoggle.active { background: #475569; color: var(--text); }
+  .keywords {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-bottom: 1.25rem;
+  }
+  .kw {
+    flex: none;
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 0.35rem 0.8rem;
+    border-radius: 999px;
+    background: transparent;
+    border: 1px solid var(--muted);
+    color: var(--muted);
+  }
+  .kw:hover { filter: none; color: var(--text); border-color: var(--text); }
+  .kw.active { background: #475569; color: var(--text); border-color: transparent; }
   .buttons { display: flex; gap: 1rem; justify-content: center; margin-bottom: 2rem; }
   button {
     flex: 1;
@@ -118,11 +148,15 @@
 </head>
 <body>
   <div class="card">
-    <div class="player-toggle" role="group" aria-label="Player">
-      <button id="player-homme" class="ptoggle">Homme</button>
-      <button id="player-femme" class="ptoggle">Femme</button>
+    <div class="player-row">
+      <span class="player-label">Je suis ...</span>
+      <div class="player-toggle" role="group" aria-label="Player">
+        <button id="player-homme" class="ptoggle">un homme</button>
+        <button id="player-femme" class="ptoggle">une femme</button>
+      </div>
     </div>
-    <h1>Pick your mode</h1>
+    <h1>Donne moi un gage</h1>
+    <div id="keywords" class="keywords"></div>
     <div class="buttons">
       <button id="btn-soft">Soft</button>
       <button id="btn-hard">Hard</button>
@@ -142,7 +176,8 @@
 <script>
   // Data comes from a Google Sheet shared as "anyone with the link can view".
   // Row-based format: columns "gage" (text), "player" (homme/femme/both),
-  // "min" / "max" (duration bounds in minutes) and "type" (soft/hard).
+  // "min" / "max" (duration bounds in minutes), "keyword" (filter tag)
+  // and "level" (soft/hard; the legacy "type" header is also accepted).
   // A column-based layout (one soft column, one hard column) is still
   // supported; such entries apply to both players with default durations.
   const SHEET_ID = "1eSbNFqS38as8rDRG5yLwZljaFEV1aUk-dR4_718YBMM";
@@ -154,6 +189,7 @@
   let timerId = null;
   let remaining = 0;
   let player = localStorage.getItem("player") || "homme";
+  let selectedKeywords = new Set();
 
   const badge = document.getElementById("badge");
   const itemEl = document.getElementById("item");
@@ -166,6 +202,7 @@
   const btnPlus = document.getElementById("btn-plus");
   const btnHomme = document.getElementById("player-homme");
   const btnFemme = document.getElementById("player-femme");
+  const keywordsEl = document.getElementById("keywords");
 
   function parseCsv(text) {
     const rows = [];
@@ -193,21 +230,23 @@
     headers.forEach((h, i) => { if (h && !(h in idx)) idx[h] = i; });
     const data = {};
 
-    if ("type" in idx) {
+    const levelIdx = "level" in idx ? idx.level : idx.type;
+    if (levelIdx !== undefined) {
       // Row-based format: one entry per row.
       const textIdx = "gage" in idx
         ? idx.gage
-        : headers.findIndex((h, i) => h && i !== idx.type);
+        : headers.findIndex((h, i) => h && i !== levelIdx);
       const cell = (r, i) => (i !== undefined && r[i] !== undefined ? r[i] : "").trim();
       for (const r of rows.slice(1)) {
         const value = cell(r, textIdx);
-        const key = cell(r, idx.type).toLowerCase();
+        const key = cell(r, levelIdx).toLowerCase();
         if (!value || !key) continue;
         (data[key] = data[key] || []).push({
           text: value,
           player: cell(r, idx.player).toLowerCase() || "both",
           min: parseInt(cell(r, idx.min), 10),
           max: parseInt(cell(r, idx.max), 10),
+          keyword: cell(r, idx.keyword).toLowerCase(),
         });
       }
     } else {
@@ -217,7 +256,7 @@
         r.forEach((value, i) => {
           const key = headers[i];
           if (key && value && value.trim()) {
-            data[key].push({ text: value.trim(), player: "both", min: NaN, max: NaN });
+            data[key].push({ text: value.trim(), player: "both", min: NaN, max: NaN, keyword: "" });
           }
         });
       }
@@ -237,6 +276,7 @@
       const data = csvToActivities(await res.text());
       if (!isValid(data)) throw new Error("missing soft/hard entries");
       activities = data;
+      renderKeywords();
       console.info("Activities loaded from Google Sheet");
     } catch (err) {
       btnSoft.disabled = true;
@@ -269,6 +309,28 @@
     timerId = setInterval(tick, 1000);
   }
 
+  function renderKeywords() {
+    const keywords = [];
+    for (const key of Object.keys(activities)) {
+      for (const g of activities[key]) {
+        if (g.keyword && !keywords.includes(g.keyword)) keywords.push(g.keyword);
+      }
+    }
+    selectedKeywords = new Set(keywords);
+    keywordsEl.innerHTML = "";
+    for (const kw of keywords) {
+      const btn = document.createElement("button");
+      btn.className = "kw active";
+      btn.textContent = kw;
+      btn.addEventListener("click", () => {
+        if (selectedKeywords.has(kw)) selectedKeywords.delete(kw);
+        else selectedKeywords.add(kw);
+        btn.classList.toggle("active", selectedKeywords.has(kw));
+      });
+      keywordsEl.appendChild(btn);
+    }
+  }
+
   function setPlayer(p) {
     player = p;
     localStorage.setItem("player", p);
@@ -278,9 +340,11 @@
 
   function pick(key) {
     if (!activities) return;
-    const list = (activities[key] || []).filter(g => g.player === "both" || g.player === player);
+    const list = (activities[key] || []).filter(g =>
+      (g.player === "both" || g.player === player) &&
+      (!g.keyword || selectedKeywords.has(g.keyword)));
     if (!list.length) {
-      errorEl.textContent = "No gage available for this player/mode combination.";
+      errorEl.textContent = "Aucun gage ne correspond à cette sélection.";
       errorEl.style.display = "block";
       return;
     }

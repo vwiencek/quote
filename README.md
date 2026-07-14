@@ -4,12 +4,13 @@
 
 ## What the site does
 
-1. You select the player at the top of the page: **Homme** or **Femme** (remembered between visits).
-2. You pick a mode: **Soft** or **Hard**.
-3. The page answers with:
-   - a random activity matching your mode, filtered by player (entries marked `both` apply to everyone)
+1. You select the player at the top of the page ("Je suis ... un homme / une femme", remembered between visits).
+2. You optionally narrow the pool with the **keyword filter chips** (all enabled by default; click to toggle).
+3. You pick a level: **Soft** or **Hard**.
+4. The page answers with:
+   - a random activity matching your level, filtered by player (entries marked `both` apply to everyone) and by the selected keywords
    - a random whole number of minutes drawn between that activity's `min` and `max`
-4. A **countdown timer** starts from that duration down to `0:00`, so you can actually measure the time spent on the task. When it reaches zero the timer turns green and shows "Time's up!". The **+ 1 min** button next to the timer adds a minute (and restarts the countdown if time was already up).
+5. A **countdown timer** starts from that duration down to `0:00`, so you can actually measure the time spent on the task. When it reaches zero the timer turns green and shows "Time's up!". The **+ 1 min** button next to the timer adds a minute (and restarts the countdown if time was already up).
 
 Clicking a mode button again re-rolls the activity and restarts the timer.
 
@@ -22,7 +23,8 @@ Activities are loaded at page load from a **Google Sheet** ([open](https://docs.
 | `gage` | The activity text |
 | `player` | Who it applies to: `homme`, `femme`, or `both` |
 | `min` / `max` | Duration bounds in minutes (a whole number is drawn in this range) |
-| `type` | `soft` or `hard` |
+| `keyword` | Filter tag — the unique values become the filter chips on the page |
+| `level` | `soft` or `hard` (the legacy `type` header is also accepted) |
 
 Edit the sheet and refresh the page: no deploy needed.
 

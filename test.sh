@@ -34,9 +34,10 @@ rows = list(csv.reader(sys.stdin))
 assert rows, 'empty sheet'
 headers = [h.strip().lower() for h in rows[0]]
 counts = collections.Counter()
-if 'type' in headers:
-    type_idx = headers.index('type')
-    text_idx = next(i for i, h in enumerate(headers) if h and i != type_idx)
+level_col = 'level' if 'level' in headers else ('type' if 'type' in headers else None)
+if level_col:
+    type_idx = headers.index(level_col)
+    text_idx = headers.index('gage') if 'gage' in headers else next(i for i, h in enumerate(headers) if h and i != type_idx)
     for r in rows[1:]:
         if len(r) > max(type_idx, text_idx) and r[text_idx].strip() and r[type_idx].strip():
             counts[r[type_idx].strip().lower()] += 1
