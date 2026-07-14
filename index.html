@@ -125,7 +125,7 @@
     font-variant-numeric: tabular-nums;
   }
   #countdown.done { color: var(--done); }
-  #btn-plus {
+  #btn-plus, #btn-pause {
     flex: none;
     font-size: 0.85rem;
     font-weight: 600;
@@ -135,7 +135,7 @@
     border: 1px solid var(--muted);
     color: var(--text);
   }
-  #btn-plus:hover { border-color: var(--text); filter: none; }
+  #btn-plus:hover, #btn-pause:hover { border-color: var(--text); filter: none; }
   #status { color: var(--muted); font-size: 1rem; }
   .badge {
     align-self: center;
@@ -173,7 +173,8 @@
       <div id="item"></div>
       <div class="timer-row">
         <div id="countdown"></div>
-        <button id="btn-plus" title="Add one minute">+ 1 min</button>
+        <button id="btn-pause" title="Pause / reprendre">⏸</button>
+        <button id="btn-plus" title="Ajouter une minute">+ 1 min</button>
       </div>
       <div id="status"></div>
     </div>
@@ -204,6 +205,9 @@
   let selectedKeywords = new Set();
   let endSound = null;
   let endSoundStopper = null;
+  let paused = false;
+  let wakeLock = null;
+  let drawn = new Set(JSON.parse(localStorage.getItem("drawnGages") || "[]"));
 
   const badge = document.getElementById("badge");
   const itemEl = document.getElementById("item");
@@ -214,6 +218,7 @@
   const btnSoft = document.getElementById("btn-soft");
   const btnHard = document.getElementById("btn-hard");
   const btnPlus = document.getElementById("btn-plus");
+  const btnPause = document.getElementById("btn-pause");
   const btnHomme = document.getElementById("player-homme");
   const btnFemme = document.getElementById("player-femme");
   const keywordsEl = document.getElementById("keywords");
@@ -334,6 +339,23 @@
     }, (END_SOUND_END - END_SOUND_START) * 1000);
   }
 
+  // Keep the screen awake while the countdown runs (mobile screens would
+  // otherwise lock mid-gage). The lock is auto-released when the tab is
+  // hidden, so it is re-acquired on return if the timer is still running.
+  async function acquireWakeLock() {
+    try {
+      if ("wakeLock" in navigator) wakeLock = await navigator.wakeLock.request("screen");
+    } catch (err) { /* unsupported or denied — not critical */ }
+  }
+
+  function releaseWakeLock() {
+    if (wakeLock) { wakeLock.release().catch(() => {}); wakeLock = null; }
+  }
+
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible" && timerId) acquireWakeLock();
+  });
+
   function tick() {
     remaining--;
     countdownEl.textContent = formatTime(Math.max(remaining, 0));
@@ -342,13 +364,34 @@
       timerId = null;
       countdownEl.classList.add("done");
       statusEl.textContent = "Time's up! Well done 🎉";
+      btnPause.disabled = true;
+      releaseWakeLock();
       playEndSound();
+      if (navigator.vibrate) navigator.vibrate([300, 100, 300]);
     }
   }
 
   function startTimer() {
     clearInterval(timerId);
     timerId = setInterval(tick, 1000);
+    paused = false;
+    btnPause.textContent = "⏸";
+    btnPause.disabled = false;
+    acquireWakeLock();
+  }
+
+  function togglePause() {
+    if (timerId) {
+      clearInterval(timerId);
+      timerId = null;
+      paused = true;
+      btnPause.textContent = "▶";
+      statusEl.textContent = "En pause";
+      releaseWakeLock();
+    } else if (paused && remaining > 0) {
+      statusEl.textContent = "C'est reparti !";
+      startTimer();
+    }
   }
 
   function renderKeywords() {
@@ -392,7 +435,19 @@
       return;
     }
     errorEl.style.display = "none";
-    const gage = list[Math.floor(Math.random() * list.length)];
+    // Avoid repeats: draw among the gages not yet seen; once the whole
+    // pool for this selection has been drawn, start a fresh round.
+    let fresh = list.filter(g => !drawn.has(g.text));
+    let newRound = false;
+    if (!fresh.length) {
+      list.forEach(g => drawn.delete(g.text));
+      localStorage.setItem("drawnGages", JSON.stringify([...drawn]));
+      fresh = list;
+      newRound = true;
+    }
+    const gage = fresh[Math.floor(Math.random() * fresh.length)];
+    drawn.add(gage.text);
+    localStorage.setItem("drawnGages", JSON.stringify([...drawn]));
     let lo = Number.isInteger(gage.min) ? gage.min : MIN_MINUTES;
     let hi = Number.isInteger(gage.max) ? gage.max : MAX_MINUTES;
     if (hi < lo) { const t = lo; lo = hi; hi = t; }
@@ -404,7 +459,8 @@
     itemEl.textContent = gage.text;
     countdownEl.classList.remove("done");
     countdownEl.textContent = formatTime(remaining);
-    statusEl.textContent = minutes + " minute" + (minutes > 1 ? "s" : "") + " — go!";
+    statusEl.textContent = minutes + " minute" + (minutes > 1 ? "s" : "") + " — go!" +
+      (newRound ? " (tous les gages ont été tirés, nouvelle tournée)" : "");
     resultEl.classList.add("visible");
 
     startTimer();
@@ -415,7 +471,7 @@
     remaining += 60;
     countdownEl.classList.remove("done");
     countdownEl.textContent = formatTime(remaining);
-    if (!timerId) {
+    if (!timerId && !paused) {
       statusEl.textContent = "One more minute — go!";
       startTimer();
     }
@@ -424,6 +480,7 @@
   btnSoft.addEventListener("click", () => pick("soft"));
   btnHard.addEventListener("click", () => pick("hard"));
   btnPlus.addEventListener("click", addMinute);
+  btnPause.addEventListener("click", togglePause);
   btnHomme.addEventListener("click", () => setPlayer("homme"));
   btnFemme.addEventListener("click", () => setPlayer("femme"));
   setPlayer(player);

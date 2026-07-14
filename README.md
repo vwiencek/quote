@@ -10,7 +10,12 @@
 4. The page answers with:
    - a random activity matching your level, filtered by player (entries marked `both` apply to everyone) and by the selected keywords
    - a random whole number of minutes drawn between that activity's `min` and `max`
-5. A **countdown timer** starts from that duration down to `0:00`, so you can actually measure the time spent on the task. When it reaches zero the timer turns green, shows "Time's up!" and plays a short sound — a segment of `SF-cum.mp3` defined by the `END_SOUND_START` / `END_SOUND_END` constants (in seconds) at the top of the script in `index.html`. The **+ 1 min** button next to the timer adds a minute (and restarts the countdown if time was already up).
+5. A **countdown timer** starts from that duration down to `0:00`, so you can actually measure the time spent on the task. When it reaches zero the timer turns green, shows "Time's up!", plays a short sound — a segment of `SF-cum.mp3` defined by the `END_SOUND_START` / `END_SOUND_END` constants (in seconds) at the top of the script in `index.html` — and vibrates on mobile. Next to the timer, **⏸** pauses/resumes the countdown and **+ 1 min** adds a minute (and restarts the countdown if time was already up).
+
+Extra behavior:
+
+- **No repeats**: drawn gages are remembered (localStorage) and not drawn again until the whole pool for the current selection has been used, then a new round starts automatically.
+- **Screen stays awake** while the countdown runs (Screen Wake Lock API, where supported), so a phone doesn't lock mid-gage.
 
 Clicking a mode button again re-rolls the activity and restarts the timer.
 
