@@ -59,12 +59,29 @@
   }
   #result.visible { display: flex; }
   #item { font-size: 1.5rem; font-weight: 700; }
+  .timer-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+  }
   #countdown {
     font-size: 3rem;
     font-weight: 700;
     font-variant-numeric: tabular-nums;
   }
   #countdown.done { color: var(--done); }
+  #btn-plus {
+    flex: none;
+    font-size: 0.85rem;
+    font-weight: 600;
+    padding: 0.4rem 0.7rem;
+    border-radius: 0.5rem;
+    background: transparent;
+    border: 1px solid var(--muted);
+    color: var(--text);
+  }
+  #btn-plus:hover { border-color: var(--text); filter: none; }
   #status { color: var(--muted); font-size: 1rem; }
   .badge {
     align-self: center;
@@ -92,7 +109,10 @@
     <div id="result">
       <span class="badge" id="badge"></span>
       <div id="item"></div>
-      <div id="countdown"></div>
+      <div class="timer-row">
+        <div id="countdown"></div>
+        <button id="btn-plus" title="Add one minute">+ 1 min</button>
+      </div>
       <div id="status"></div>
     </div>
   </div>
@@ -105,6 +125,7 @@
 
   let activities = null;
   let timerId = null;
+  let remaining = 0;
 
   const badge = document.getElementById("badge");
   const itemEl = document.getElementById("item");
@@ -114,6 +135,7 @@
   const errorEl = document.getElementById("error");
   const btnSoft = document.getElementById("btn-soft");
   const btnHard = document.getElementById("btn-hard");
+  const btnPlus = document.getElementById("btn-plus");
 
   async function loadData() {
     try {
@@ -135,12 +157,28 @@
     return m + ":" + String(s).padStart(2, "0");
   }
 
+  function tick() {
+    remaining--;
+    countdownEl.textContent = formatTime(Math.max(remaining, 0));
+    if (remaining <= 0) {
+      clearInterval(timerId);
+      timerId = null;
+      countdownEl.classList.add("done");
+      statusEl.textContent = "Time's up! Well done 🎉";
+    }
+  }
+
+  function startTimer() {
+    clearInterval(timerId);
+    timerId = setInterval(tick, 1000);
+  }
+
   function pick(key) {
     if (!activities) return;
     const list = activities[key];
     const item = list[Math.floor(Math.random() * list.length)];
     const minutes = MIN_MINUTES + Math.floor(Math.random() * (MAX_MINUTES - MIN_MINUTES + 1));
-    let remaining = minutes * 60;
+    remaining = minutes * 60;
 
     badge.textContent = key;
     badge.className = "badge " + key;
@@ -150,20 +188,23 @@
     statusEl.textContent = minutes + " minute" + (minutes > 1 ? "s" : "") + " — go!";
     resultEl.classList.add("visible");
 
-    clearInterval(timerId);
-    timerId = setInterval(() => {
-      remaining--;
-      countdownEl.textContent = formatTime(Math.max(remaining, 0));
-      if (remaining <= 0) {
-        clearInterval(timerId);
-        countdownEl.classList.add("done");
-        statusEl.textContent = "Time's up! Well done 🎉";
-      }
-    }, 1000);
+    startTimer();
+  }
+
+  function addMinute() {
+    if (!resultEl.classList.contains("visible")) return;
+    remaining += 60;
+    countdownEl.classList.remove("done");
+    countdownEl.textContent = formatTime(remaining);
+    if (!timerId) {
+      statusEl.textContent = "One more minute — go!";
+      startTimer();
+    }
   }
 
   btnSoft.addEventListener("click", () => pick("soft"));
   btnHard.addEventListener("click", () => pick("hard"));
+  btnPlus.addEventListener("click", addMinute);
   loadData();
 </script>
 </body>
