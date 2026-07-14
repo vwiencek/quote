@@ -122,10 +122,8 @@
   // Two formats are supported:
   //   - row-based: columns "gage" (text) and "type" (soft/hard), one entry per row
   //   - column-based: one "soft" column and one "hard" column
-  // quotes.json is the fallback when the sheet is unreachable.
   const SHEET_ID = "1wRKkiy9z9AjNeNns6jI5iRtYi6_SWLlvO3NfWknuJYI";
   const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/" + SHEET_ID + "/gviz/tq?tqx=out:csv";
-  const FALLBACK_URL = "quotes.json";
   const MIN_MINUTES = 2;
   const MAX_MINUTES = 10;
 
@@ -200,26 +198,14 @@
       const res = await fetch(SHEET_CSV_URL);
       if (!res.ok) throw new Error("HTTP " + res.status);
       const data = csvToActivities(await res.text());
-      if (!isValid(data)) throw new Error("missing soft/hard columns");
+      if (!isValid(data)) throw new Error("missing soft/hard entries");
       activities = data;
       console.info("Activities loaded from Google Sheet");
-      return;
-    } catch (err) {
-      console.warn("Google Sheet unavailable (" + err.message + "), falling back to " + FALLBACK_URL);
-    }
-    try {
-      const res = await fetch(FALLBACK_URL);
-      if (!res.ok) throw new Error("HTTP " + res.status);
-      const data = await res.json();
-      if (!isValid(data)) throw new Error("missing soft/hard keys");
-      activities = data;
-      console.info("Activities loaded from fallback " + FALLBACK_URL);
     } catch (err) {
       btnSoft.disabled = true;
       btnHard.disabled = true;
-      errorEl.textContent = "Could not load activities from the Google Sheet nor " +
-        FALLBACK_URL + " (" + err.message + "). " +
-        "Serve the site over HTTP (./serve.sh) — fetch does not work from file://";
+      errorEl.textContent = "Could not load activities from the Google Sheet (" +
+        err.message + "). Check that the sheet is shared as \"anyone with the link can view\".";
       errorEl.style.display = "block";
     }
   }

@@ -14,20 +14,15 @@ Clicking a mode button again re-rolls the activity and restarts the timer.
 
 ## Where the data comes from
 
-Activities are loaded at page load, in this order:
+Activities are loaded at page load from a **Google Sheet** ([open](https://docs.google.com/spreadsheets/d/1wRKkiy9z9AjNeNns6jI5iRtYi6_SWLlvO3NfWknuJYI/edit)) — columns `gage` (the text) and `type` (`soft` or `hard`), one entry per row. Edit the sheet and refresh the page: no deploy needed.
 
-1. **Google Sheet** ([open](https://docs.google.com/spreadsheets/d/1wRKkiy9z9AjNeNns6jI5iRtYi6_SWLlvO3NfWknuJYI/edit)) — columns `gage` (the text) and `type` (`soft` or `hard`), one entry per row. Edit the sheet and refresh the page: no deploy needed.
-   The sheet must be shared as **"anyone with the link can view"** for the page to read it (it is fetched as CSV from the browser). A column-based layout (one `soft` column, one `hard` column) is also supported.
-2. **`quotes.json`** (fallback) — used automatically when the sheet is unreachable or malformed.
-
-The browser console says which source was used.
+The sheet must be shared as **"anyone with the link can view"** for the page to read it (it is fetched as CSV from the browser). A column-based layout (one `soft` column, one `hard` column) is also supported. If the sheet is unreachable, the page shows an error and disables the buttons.
 
 ## Files
 
 | File | Purpose |
 |------|---------|
 | `index.html` | The whole app (markup, styles, logic) |
-| `quotes.json` | Fallback activity lists, used when the Google Sheet is unreachable |
 | `serve.sh` | Start a local server to preview the site |
 | `test.sh` | Smoke-test the site locally |
 
@@ -38,9 +33,7 @@ The browser console says which source was used.
 ./serve.sh 3000     # or pick another port
 ```
 
-Then open <http://localhost:8001>. Edit `index.html` or `quotes.json` and refresh — no build step.
-
-> Note: opening `index.html` directly from the filesystem (`file://`) will not work, because the activity data is fetched from `quotes.json` at runtime. Always go through `serve.sh`.
+Then open <http://localhost:8001>. Edit `index.html` and refresh — no build step.
 
 ## Test
 
@@ -48,7 +41,7 @@ Then open <http://localhost:8001>. Edit `index.html` or `quotes.json` and refres
 ./test.sh
 ```
 
-Starts a temporary server, checks that `index.html` and `quotes.json` are served, and validates the structure of `quotes.json` (must contain non-empty `soft` and `hard` string lists). Exits non-zero on failure.
+Starts a temporary server, checks that `index.html` is served, and validates that the Google Sheet is reachable and contains `soft` and `hard` entries (needs network access). Exits non-zero on failure.
 
 ## Deployment
 

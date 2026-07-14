@@ -1,6 +1,7 @@
 #!/bin/sh
-# Smoke-test the site: start a temporary server, check that every
-# page/asset is served and that quotes.json is well-formed.
+# Smoke-test the site: start a temporary server, check that the page is
+# served, and validate that the Google Sheet data source is reachable
+# and well-formed (needs network access).
 # Usage: ./test.sh
 cd "$(dirname "$0")"
 PORT=8765
@@ -22,20 +23,31 @@ check_url() {
 }
 
 check_url index.html
-check_url quotes.json
 
-if python3 - <<'EOF'
-import json, sys
-with open("quotes.json") as f:
-    data = json.load(f)
-assert set(data.keys()) == {"soft", "hard"}, f"unexpected keys: {set(data.keys())}"
-for key, items in data.items():
-    assert isinstance(items, list) and items, f"'{key}' must be a non-empty list"
-    assert all(isinstance(i, str) and i.strip() for i in items), f"'{key}' items must be non-empty strings"
-print(f"OK   quotes.json structure (soft: {len(data['soft'])} items, hard: {len(data['hard'])} items)")
-EOF
-then :; else
-  echo "FAIL quotes.json structure"
+SHEET_ID=$(sed -n 's/.*const SHEET_ID = "\([^"]*\)".*/\1/p' index.html)
+if [ -z "$SHEET_ID" ]; then
+  echo "FAIL could not extract SHEET_ID from index.html"
+  FAIL=1
+elif curl -s -L -m 20 "https://docs.google.com/spreadsheets/d/$SHEET_ID/gviz/tq?tqx=out:csv" | python3 -c "
+import csv, sys, collections
+rows = list(csv.reader(sys.stdin))
+assert rows, 'empty sheet'
+headers = [h.strip().lower() for h in rows[0]]
+counts = collections.Counter()
+if 'type' in headers:
+    type_idx = headers.index('type')
+    text_idx = next(i for i, h in enumerate(headers) if h and i != type_idx)
+    for r in rows[1:]:
+        if len(r) > max(type_idx, text_idx) and r[text_idx].strip() and r[type_idx].strip():
+            counts[r[type_idx].strip().lower()] += 1
+else:
+    for i, h in enumerate(headers):
+        if h:
+            counts[h] = sum(1 for r in rows[1:] if len(r) > i and r[i].strip())
+assert counts.get('soft', 0) > 0 and counts.get('hard', 0) > 0, f'missing soft/hard entries: {dict(counts)}'
+print(f\"OK   Google Sheet data (soft: {counts['soft']}, hard: {counts['hard']})\")
+"; then :; else
+  echo "FAIL Google Sheet data (unreachable, not shared, or malformed)"
   FAIL=1
 fi
 
