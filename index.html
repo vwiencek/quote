@@ -42,6 +42,7 @@
         <button id="btn-pause" title="Pause / reprendre" aria-label="Pause ou reprendre le minuteur">⏸</button>
         <button id="btn-plus" title="Ajouter une minute" aria-label="Ajouter une minute">+ 1 min</button>
       </div>
+      <button id="btn-finish" title="Le gage est fait — arrêter le minuteur">Terminé ✔</button>
       <div id="status"></div>
     </div>
   </div>
@@ -90,6 +91,7 @@
   const btnHard = document.getElementById("btn-hard");
   const btnPlus = document.getElementById("btn-plus");
   const btnPause = document.getElementById("btn-pause");
+  const btnFinish = document.getElementById("btn-finish");
   const btnHomme = document.getElementById("player-homme");
   const btnFemme = document.getElementById("player-femme");
   const keywordsEl = document.getElementById("keywords");
@@ -294,10 +296,28 @@
       ringWrap.classList.add("done");
       statusEl.textContent = "Time's up! Well done 🎉";
       btnPause.disabled = true;
+      btnFinish.disabled = true;
       releaseWakeLock();
       playEndSound();
       if (navigator.vibrate) navigator.vibrate([300, 100, 300]);
     }
+  }
+
+  // "Terminé": the gage is done before the clock runs out — stop the
+  // timer and wait for the next draw.
+  function finishGage() {
+    if (!resultEl.classList.contains("visible") || btnFinish.disabled) return;
+    clearInterval(timerId);
+    timerId = null;
+    paused = false;
+    countdownEl.classList.add("done");
+    ringWrap.classList.add("done");
+    statusEl.textContent = "Gage terminé 🎉 À qui le tour ?";
+    btnPause.disabled = true;
+    btnFinish.disabled = true;
+    releaseWakeLock();
+    playEndSound();
+    if (navigator.vibrate) navigator.vibrate([300, 100, 300]);
   }
 
   function startTimer() {
@@ -306,6 +326,7 @@
     paused = false;
     btnPause.textContent = "⏸";
     btnPause.disabled = false;
+    btnFinish.disabled = false;
     acquireWakeLock();
   }
 
@@ -461,6 +482,7 @@
   btnSurprise.addEventListener("click", surprise);
   btnPlus.addEventListener("click", addMinute);
   btnPause.addEventListener("click", togglePause);
+  btnFinish.addEventListener("click", finishGage);
   btnHomme.addEventListener("click", () => setPlayer("homme"));
   btnFemme.addEventListener("click", () => setPlayer("femme"));
   btnAlternate.addEventListener("click", () => setAlternate(!alternate));
