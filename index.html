@@ -1,128 +1,132 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Random Quote</title>
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    :root {
-      --bg: #f6f4ef;
-      --card: #ffffff;
-      --text: #1f2430;
-      --muted: #6b7280;
-      --accent: #4f6df5;
-    }
-
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --bg: #14161c;
-        --card: #1e222c;
-        --text: #e8eaf0;
-        --muted: #9aa1af;
-        --accent: #7c93ff;
-      }
-    }
-
-    body {
-      font-family: Georgia, "Times New Roman", serif;
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 1.5rem;
-    }
-
-    .card {
-      background: var(--card);
-      max-width: 40rem;
-      width: 100%;
-      padding: 3rem 2.5rem;
-      border-radius: 1rem;
-      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
-      text-align: center;
-    }
-
-    blockquote {
-      font-size: 1.5rem;
-      line-height: 1.5;
-      font-style: italic;
-      margin-bottom: 1.5rem;
-    }
-
-    blockquote::before { content: "\201C"; }
-    blockquote::after  { content: "\201D"; }
-
-    cite {
-      display: block;
-      font-style: normal;
-      color: var(--muted);
-      font-size: 1rem;
-      margin-bottom: 2.5rem;
-    }
-
-    cite::before { content: "\2014\00A0"; }
-
-    button {
-      font-family: inherit;
-      font-size: 1rem;
-      padding: 0.75rem 1.75rem;
-      border: none;
-      border-radius: 0.5rem;
-      background: var(--accent);
-      color: #fff;
-      cursor: pointer;
-      transition: opacity 0.15s ease;
-    }
-
-    button:hover { opacity: 0.85; }
-    button:active { transform: translateY(1px); }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Soft or Hard Picker</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --card: #1e293b;
+    --text: #e2e8f0;
+    --muted: #94a3b8;
+    --soft: #38bdf8;
+    --hard: #f472b6;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+  }
+  .card {
+    background: var(--card);
+    border-radius: 1rem;
+    padding: 2.5rem 2rem;
+    max-width: 26rem;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0,0,0,.4);
+  }
+  h1 { font-size: 1.4rem; margin-bottom: 1.5rem; }
+  .buttons { display: flex; gap: 1rem; justify-content: center; margin-bottom: 2rem; }
+  button {
+    flex: 1;
+    padding: 0.9rem 1rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+    border: none;
+    border-radius: 0.6rem;
+    cursor: pointer;
+    color: #0f172a;
+    transition: transform .1s ease, filter .15s ease;
+  }
+  button:hover { filter: brightness(1.15); }
+  button:active { transform: scale(.96); }
+  #btn-soft { background: var(--soft); }
+  #btn-hard { background: var(--hard); }
+  #result {
+    min-height: 5.5rem;
+    display: none;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  #result.visible { display: flex; }
+  #item { font-size: 1.5rem; font-weight: 700; }
+  #time { font-size: 1.1rem; color: var(--muted); }
+  .badge {
+    align-self: center;
+    font-size: .75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    padding: .25rem .7rem;
+    border-radius: 999px;
+    color: #0f172a;
+  }
+  .badge.soft { background: var(--soft); }
+  .badge.hard { background: var(--hard); }
+</style>
 </head>
 <body>
-  <main class="card">
-    <blockquote id="quote"></blockquote>
-    <cite id="author"></cite>
-    <button id="new-quote">New quote</button>
-  </main>
+  <div class="card">
+    <h1>Pick your mode</h1>
+    <div class="buttons">
+      <button id="btn-soft">Soft</button>
+      <button id="btn-hard">Hard</button>
+    </div>
+    <div id="result">
+      <span class="badge" id="badge"></span>
+      <div id="item"></div>
+      <div id="time"></div>
+    </div>
+  </div>
 
-  <script>
-    const quotes = [
-      { text: "The only way to do great work is to love what you do.", author: "Steve Jobs" },
-      { text: "Life is what happens when you're busy making other plans.", author: "John Lennon" },
-      { text: "In the middle of difficulty lies opportunity.", author: "Albert Einstein" },
-      { text: "It is not the strongest of the species that survives, but the most adaptable.", author: "Charles Darwin" },
-      { text: "Simplicity is the ultimate sophistication.", author: "Leonardo da Vinci" },
-      { text: "Whether you think you can or you think you can't, you're right.", author: "Henry Ford" },
-      { text: "The best time to plant a tree was 20 years ago. The second best time is now.", author: "Chinese proverb" },
-      { text: "Do not go where the path may lead, go instead where there is no path and leave a trail.", author: "Ralph Waldo Emerson" },
-      { text: "It always seems impossible until it's done.", author: "Nelson Mandela" },
-      { text: "The journey of a thousand miles begins with a single step.", author: "Lao Tzu" },
-    ];
+<script>
+  // ======================================================
+  // EDIT YOUR LISTS HERE — Map<key, list>
+  // ======================================================
+  const activities = new Map([
+    ["soft", [
+      "Stretching",
+      "Deep breathing",
+      "Slow walk",
+      "Foam rolling",
+      "Meditation",
+    ]],
+    ["hard", [
+      "Burpees",
+      "Push-ups",
+      "Squats",
+      "Plank",
+      "Jumping jacks",
+    ]],
+  ]);
+  // ======================================================
 
-    const quoteEl = document.getElementById("quote");
-    const authorEl = document.getElementById("author");
-    let currentIndex = -1;
+  const MIN_MINUTES = 2;
+  const MAX_MINUTES = 10;
 
-    function showRandomQuote() {
-      let index;
-      do {
-        index = Math.floor(Math.random() * quotes.length);
-      } while (index === currentIndex && quotes.length > 1);
-      currentIndex = index;
-      quoteEl.textContent = quotes[index].text;
-      authorEl.textContent = quotes[index].author;
-    }
+  function pick(key) {
+    const list = activities.get(key);
+    const item = list[Math.floor(Math.random() * list.length)];
+    const minutes = MIN_MINUTES + Math.floor(Math.random() * (MAX_MINUTES - MIN_MINUTES + 1));
 
-    document.getElementById("new-quote").addEventListener("click", showRandomQuote);
-    showRandomQuote();
-  </script>
+    const badge = document.getElementById("badge");
+    badge.textContent = key;
+    badge.className = "badge " + key;
+    document.getElementById("item").textContent = item;
+    document.getElementById("time").textContent = "for " + minutes + " minute" + (minutes > 1 ? "s" : "");
+    document.getElementById("result").classList.add("visible");
+  }
+
+  document.getElementById("btn-soft").addEventListener("click", () => pick("soft"));
+  document.getElementById("btn-hard").addEventListener("click", () => pick("hard"));
+</script>
 </body>
 </html>
