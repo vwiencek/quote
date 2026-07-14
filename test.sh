@@ -24,18 +24,19 @@ check_url() {
 
 check_url index.html
 check_url styles.css
+check_url app.js
 check_url manifest.json
 check_url sw.js
 check_url icon-192.png
 check_url icon-512.png
 check_url icon-180.png
 
-SOUND=$(sed -n 's/.*const END_SOUND_URL = "\([^"]*\)".*/\1/p' index.html)
+SOUND=$(sed -n 's/.*const END_SOUND_URL = "\([^"]*\)".*/\1/p' app.js)
 [ -n "$SOUND" ] && check_url "$SOUND"
 
-SHEET_ID=$(sed -n 's/.*const SHEET_ID = "\([^"]*\)".*/\1/p' index.html)
+SHEET_ID=$(sed -n 's/.*const SHEET_ID = "\([^"]*\)".*/\1/p' app.js)
 if [ -z "$SHEET_ID" ]; then
-  echo "FAIL could not extract SHEET_ID from index.html"
+  echo "FAIL could not extract SHEET_ID from app.js"
   FAIL=1
 elif curl -s -L -m 20 "https://docs.google.com/spreadsheets/d/$SHEET_ID/gviz/tq?tqx=out:csv" | python3 -c "
 import csv, sys, collections
@@ -76,6 +77,13 @@ for n, r in enumerate(rows[1:], 2):
         mn, mx = cell(r, idx['min']), cell(r, idx['max'])
         if mn.isdigit() and mx.isdigit() and int(mn) > int(mx):
             warnings.append(f'row {n}: min {mn} > max {mx} (app swaps them)')
+    if 'weight' in idx:
+        w = cell(r, idx['weight'])
+        if w:
+            try:
+                assert float(w) > 0
+            except (ValueError, AssertionError):
+                warnings.append(f'row {n}: bad weight {w!r} (app falls back to 1)')
 
 assert counts.get('soft', 0) > 0 and counts.get('hard', 0) > 0, f'missing soft/hard entries: {dict(counts)}'
 for w in warnings[:5]:

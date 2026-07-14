@@ -8,7 +8,7 @@ Contexte pour Claude Code (et tout humain qui débarque). Résume ce qui a été
 
 ## Architecture
 
-- **Site 100 % statique, sans build** : `index.html` (markup + JS inline), `styles.css`, `sw.js`, `manifest.json`, icônes PNG. Pas de framework, pas de dépendance.
+- **Site 100 % statique, sans build** : `index.html` (markup), `styles.css`, `app.js` (logique), `sw.js`, `manifest.json`, icônes PNG. Pas de framework, pas de dépendance.
 - **Données** : Google Sheet partagée « anyone with link can view », lue en CSV côté client via l'endpoint gviz (`/gviz/tq?tqx=out:csv`). L'ID de la feuille est la constante `SHEET_ID` en haut du script d'`index.html`.
 - **Colonnes de la feuille** : `gage` (texte), `player` (`homme`/`femme`/`both`), `min`/`max` (bornes de durée en minutes), `keyword` (tag de filtre), `level` (`soft`/`hard` ; l'ancien en-tête `type` est accepté). Lignes incomplètes tolérées : sans `level` → ignorées ; `player` vide → `both` ; `min`/`max` vides → 1–10 ; `keyword` vide → toujours inclus.
 - **Déploiement** : chaque push sur `main` déploie sur Azure Static Web Apps (workflow dans `.github/workflows/`, `skip_app_build: true` car site statique — Oryx échouait sinon).
@@ -25,6 +25,9 @@ Contexte pour Claude Code (et tout humain qui débarque). Résume ce qui a été
 - **Cache stale-while-revalidate** : dernier CSV en localStorage (clé liée à `SHEET_ID`), affichage instantané puis re-fetch en arrière-plan ; note « données mises à jour » si changement (sélection de keywords préservée), note « injoignable — cache » si hors ligne.
 - **PWA** : installable (manifest, icônes 🎲 générées par canvas), `sw.js` network-first avec repli cache pour le shell (`gage-v2`).
 - Protection anti-fausse-manip : remplacer un gage en cours = 2 clics en 3 s.
+- Options persistées : 🔥 intensité (Surprise penche vers hard au fil des tirages, 20 %→85 %), 🙈 temps caché (compte à rebours et anneau masqués), 🔊/🔇 son.
+- Score de session par joueur (« Lui / Elle », 1 point max par gage terminé, ↺ pour reset), colonne `weight` optionnelle (pondération des tirages), tap sur le gage = affichage plein écran.
+- Couleurs : soft orange, hard rouge sang (`--soft`/`--hard`) ; logos ♂ bleu / ♀ rose (`--man`/`--woman`, SVG inline — pas de glyphes Unicode, Firefox les rendait en emoji).
 
 ## Scripts
 
