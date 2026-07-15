@@ -85,7 +85,7 @@ for n, r in enumerate(rows[1:], 2):
             except (ValueError, AssertionError):
                 warnings.append(f'row {n}: bad weight {w!r} (app falls back to 1)')
 
-assert counts.get('soft', 0) > 0 and counts.get('hard', 0) > 0, f'missing soft/hard entries: {dict(counts)}'
+assert counts.get('soft', 0) > 0 or counts.get('hard', 0) > 0, f'no soft/hard entries at all: {dict(counts)}'
 for w in warnings[:5]:
     print(f'WARN sheet {w}')
 if len(warnings) > 5:

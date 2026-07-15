@@ -193,8 +193,11 @@ function csvToActivities(text) {
 }
 
 function isValid(data) {
-  return data && Array.isArray(data.soft) && data.soft.length > 0 &&
-         Array.isArray(data.hard) && data.hard.length > 0;
+  // At least one level bucket must have entries; a sheet with only
+  // soft (or only hard) gages is valid — the draw handles empty pools.
+  return data &&
+    ((Array.isArray(data.soft) && data.soft.length > 0) ||
+     (Array.isArray(data.hard) && data.hard.length > 0));
 }
 
 // Cache keys are bound to the sheet: switching SHEET_ID never shows
