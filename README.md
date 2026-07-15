@@ -4,6 +4,7 @@
 
 ## What the site does
 
+0. **PIN lock**: the app opens on an access-code screen (numeric keypad) and no content is shown until the correct 4-digit code is entered. The code is `1310` (constant `ACCESS_PIN` at the top of `app.js`). Once unlocked, the app stays open for the rest of the browser session (`sessionStorage`); closing the tab re-locks it.
 1. You select the player at the top of the page (♂ / ♀ icons, remembered between visits). The **🔁 chacun son tour** toggle alternates the player automatically after each gage.
 2. Option toggles: **🔥 intensité** (Surprise draws lean more and more towards hard as the session goes on, 20% → 85%), **🙈 temps caché** (the countdown and ring are masked — you don't know when it will ring) and **🔊 son** (mute/unmute the end sound). All persisted.
 3. You optionally narrow the pool with the **keyword filter chips** (all enabled by default; click to toggle).

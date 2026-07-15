@@ -280,3 +280,74 @@ button:disabled { filter: grayscale(.6); cursor: not-allowed; }
   cursor: zoom-out;
 }
 #zoom.visible { display: flex; }
+
+/* PIN lock — hides all content until the code is entered */
+.lock {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  background: var(--bg);
+}
+.lock.unlocked { display: none; }
+/* Keep app content out of sight (and untabbable) while locked */
+body.locked .card,
+body.locked #zoom { display: none !important; }
+.lock-card {
+  width: 100%;
+  max-width: 20rem;
+  text-align: center;
+}
+.lock-icon { font-size: 2.5rem; margin-bottom: 0.75rem; }
+.lock-title { color: var(--muted); font-size: 1rem; margin-bottom: 1.25rem; }
+.pin-dots {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+.pin-dots span {
+  width: 0.9rem;
+  height: 0.9rem;
+  border-radius: 999px;
+  border: 2px solid var(--muted);
+  transition: background .15s ease, border-color .15s ease;
+}
+.pin-dots span.filled { background: var(--text); border-color: var(--text); }
+.pin-error {
+  color: #f87171;
+  font-size: 0.85rem;
+  min-height: 1.2rem;
+  margin-bottom: 1rem;
+  visibility: hidden;
+}
+.pin-error.show { visibility: visible; }
+.lock.shake .lock-card { animation: shake .4s; }
+@keyframes shake {
+  10%, 90% { transform: translateX(-2px); }
+  20%, 80% { transform: translateX(4px); }
+  30%, 50%, 70% { transform: translateX(-8px); }
+  40%, 60% { transform: translateX(8px); }
+}
+.keypad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.9rem;
+  max-width: 15rem;
+  margin: 0 auto;
+}
+.key {
+  flex: none;
+  aspect-ratio: 1;
+  font-size: 1.6rem;
+  font-weight: 600;
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--text);
+  border: 1px solid rgba(148, 163, 184, .2);
+}
+.key:hover { filter: none; background: #475569; }
+.key-del { font-size: 1.3rem; }

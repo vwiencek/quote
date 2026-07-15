@@ -10,7 +10,32 @@
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="stylesheet" href="styles.css">
 </head>
-<body>
+<body class="locked">
+  <div id="lock" class="lock">
+    <div class="lock-card">
+      <div class="lock-icon" aria-hidden="true">🔒</div>
+      <p class="lock-title">Code d'accès</p>
+      <div id="pin-dots" class="pin-dots" aria-hidden="true">
+        <span></span><span></span><span></span><span></span>
+      </div>
+      <p id="pin-error" class="pin-error">Code incorrect</p>
+      <div class="keypad" role="group" aria-label="Clavier">
+        <button class="key" data-key="1">1</button>
+        <button class="key" data-key="2">2</button>
+        <button class="key" data-key="3">3</button>
+        <button class="key" data-key="4">4</button>
+        <button class="key" data-key="5">5</button>
+        <button class="key" data-key="6">6</button>
+        <button class="key" data-key="7">7</button>
+        <button class="key" data-key="8">8</button>
+        <button class="key" data-key="9">9</button>
+        <span></span>
+        <button class="key" data-key="0">0</button>
+        <button class="key key-del" data-key="del" aria-label="Effacer">⌫</button>
+      </div>
+    </div>
+  </div>
+
   <div class="card">
     <div class="player-row">
       <span class="player-label">Donne un gage à ...</span>

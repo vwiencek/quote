@@ -1,3 +1,57 @@
+// PIN lock — content stays hidden until the access code is entered.
+// Unlock lasts for the browser session (cleared when the tab is closed).
+const ACCESS_PIN = "1310";
+(function pinGate() {
+  const lock = document.getElementById("lock");
+  const dots = document.querySelectorAll("#pin-dots span");
+  const errorEl = document.getElementById("pin-error");
+  let entry = "";
+
+  function unlock() {
+    document.body.classList.remove("locked");
+    lock.classList.add("unlocked");
+    sessionStorage.setItem("pinOk", "1");
+  }
+
+  if (sessionStorage.getItem("pinOk") === "1") { unlock(); return; }
+
+  function paint() {
+    dots.forEach((d, i) => d.classList.toggle("filled", i < entry.length));
+  }
+  function reject() {
+    errorEl.classList.add("show");
+    lock.classList.add("shake");
+    setTimeout(() => lock.classList.remove("shake"), 400);
+    entry = "";
+    paint();
+  }
+  function press(key) {
+    if (key === "del") {
+      entry = entry.slice(0, -1);
+      errorEl.classList.remove("show");
+      paint();
+      return;
+    }
+    if (entry.length >= 4) return;
+    errorEl.classList.remove("show");
+    entry += key;
+    paint();
+    if (entry.length === 4) {
+      if (entry === ACCESS_PIN) unlock();
+      else setTimeout(reject, 150);
+    }
+  }
+
+  lock.querySelectorAll(".key").forEach(btn =>
+    btn.addEventListener("click", () => press(btn.dataset.key))
+  );
+  document.addEventListener("keydown", e => {
+    if (document.body.classList.contains("locked") === false) return;
+    if (e.key >= "0" && e.key <= "9") press(e.key);
+    else if (e.key === "Backspace") press("del");
+  });
+})();
+
 // Data comes from a Google Sheet shared as "anyone with the link can view".
 // Row-based format: columns "gage" (text), "player" (homme/femme/both),
 // "min" / "max" (duration bounds in minutes), "keyword" (filter tag),

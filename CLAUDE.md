@@ -15,6 +15,7 @@ Contexte pour Claude Code (et tout humain qui débarque). Résume ce qui a été
 
 ## Fonctionnalités (état actuel)
 
+- **Verrou PIN** : au chargement, un écran de code (pavé numérique) masque tout le contenu tant que le bon code à 4 chiffres n'est pas saisi. Code = `1310` (constante `ACCESS_PIN` en haut d'`app.js`). Déverrouillage valable pour la session (`sessionStorage`) ; se referme à la fermeture de l'onglet. `body.locked` cache la carte dès le premier rendu (pas de flash).
 - Toggle « Donne un gage à ... un homme / une femme » (persisté en localStorage) + « 🔁 chacun son tour » (alternance auto du joueur à chaque tirage).
 - Chips de keywords (uniques, générées depuis la feuille), multi-sélection, état sélectionné = rempli bleu + ✓.
 - Boutons Soft / **Surprise** (niveau aléatoire) / Hard.
