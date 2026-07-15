@@ -289,28 +289,36 @@ function updateRing() {
 
 // Audio must be unlocked during a user gesture (autoplay policy), so
 // pick() calls this: it loads the mp3 and does a muted play/pause to
-// authorize later playback when the timer ends.
+// authorize later playback when the timer ends. The element stays MUTED
+// from here on — only playEndSound() unmutes it, for the end segment —
+// so a button click never produces any audible sound.
 function ensureAudio() {
   if (endSound) return;
   endSound = new Audio(END_SOUND_URL);
   endSound.preload = "auto";
   endSound.muted = true;
+  // Stop the unlock playback the moment it starts — as a safety net in case
+  // a browser is slow to honour `muted` or leaves the play() promise
+  // pending (which would otherwise let the whole clip play through).
+  const stop = () => { endSound.pause(); endSound.currentTime = 0; };
+  endSound.addEventListener("playing", stop, { once: true });
   const p = endSound.play();
-  if (p) p.then(() => {
-    endSound.pause();
-    endSound.muted = false;
-    endSound.currentTime = 0;
-  }).catch(() => { endSound.muted = false; });
+  if (p && p.then) p.then(stop).catch(() => {});
+  else stop();
 }
 
-// Play the [END_SOUND_START, END_SOUND_END] segment of the mp3.
+// Play the [END_SOUND_START, END_SOUND_END] segment of the mp3. The
+// element is unmuted only for the duration of the segment, then muted
+// and paused again.
 function playEndSound() {
   if (!endSound || muted) return;
   clearTimeout(endSoundStopper);
+  endSound.muted = false;
   endSound.currentTime = END_SOUND_START;
   endSound.play().catch(() => {});
   endSoundStopper = setTimeout(() => {
     endSound.pause();
+    endSound.muted = true;
   }, (END_SOUND_END - END_SOUND_START) * 1000);
 }
 
