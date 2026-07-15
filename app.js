@@ -83,11 +83,9 @@ let wakeLock = null;
 let drawn = new Set(JSON.parse(localStorage.getItem("drawnGages") || "[]"));
 let totalSeconds = 0;
 let alternate = localStorage.getItem("alternate") === "1";
-let intensity = localStorage.getItem("intensity") === "1";
 let hiddenTime = localStorage.getItem("hiddenTime") === "1";
 let muted = localStorage.getItem("muted") === "1";
 let score = JSON.parse(localStorage.getItem("score") || '{"homme":0,"femme":0}');
-let sessionDraws = 0;
 let currentGagePlayer = null;
 let gageCounted = true;
 let hasPicked = false;
@@ -111,7 +109,6 @@ const keywordsEl = document.getElementById("keywords");
 const noteEl = document.getElementById("note");
 const btnSurprise = document.getElementById("btn-surprise");
 const btnAlternate = document.getElementById("btn-alternate");
-const btnIntensity = document.getElementById("btn-intensity");
 const btnHidden = document.getElementById("btn-hidden");
 const btnSound = document.getElementById("btn-sound");
 const scoreHommeEl = document.getElementById("score-homme");
@@ -502,7 +499,6 @@ function pick(key) {
   const minutes = lo + Math.floor(Math.random() * (hi - lo + 1));
   remaining = minutes * 60;
   totalSeconds = remaining;
-  sessionDraws++;
   currentGagePlayer = p;
   gageCounted = false;
 
@@ -552,12 +548,6 @@ const paintAlternate = bindToggle(btnAlternate, "alternate", (on) => {
   paintAlternate(on);
 });
 
-const paintIntensity = bindToggle(btnIntensity, "intensity", (on) => {
-  intensity = on;
-  localStorage.setItem("intensity", on ? "1" : "0");
-  paintIntensity(on);
-});
-
 const paintHidden = bindToggle(btnHidden, "hiddenTime", (on) => {
   hiddenTime = on;
   localStorage.setItem("hiddenTime", on ? "1" : "0");
@@ -573,21 +563,12 @@ const paintSound = bindToggle(btnSound, "muted", (on) => {
   btnSound.textContent = muted ? "🔇 son" : "🔊 son";
 });
 
-// "Surprise" picks a level at random; with "intensité" on, the odds of
-// hard grow with every draw of the session (20% -> 85%).
+// "Surprise" picks a level (soft or hard) at random.
 function surprise() {
   if (!activities) return;
   const levels = ["soft", "hard"].filter(k => (activities[k] || []).length);
   if (!levels.length) return;
-  let level;
-  if (levels.length === 1) {
-    level = levels[0];
-  } else if (intensity) {
-    const pHard = Math.min(0.85, 0.2 + 0.075 * sessionDraws);
-    level = Math.random() < pHard ? "hard" : "soft";
-  } else {
-    level = levels[Math.floor(Math.random() * levels.length)];
-  }
+  const level = levels[Math.floor(Math.random() * levels.length)];
   pick(level);
 }
 
@@ -623,7 +604,6 @@ btnResetScore.addEventListener("click", resetScore);
 
 setPlayer(player);
 paintAlternate(alternate);
-paintIntensity(intensity);
 paintHidden(hiddenTime);
 paintSound(!muted);
 btnSound.textContent = muted ? "🔇 son" : "🔊 son";

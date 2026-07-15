@@ -58,7 +58,6 @@
       </div>
     </div>
     <div class="options" role="group" aria-label="Options">
-      <button id="btn-intensity" class="opt" aria-pressed="false" title="Tirages de plus en plus hard au fil de la soirée">🔥 intensité</button>
       <button id="btn-hidden" class="opt" aria-pressed="false" title="Masquer le temps restant">🙈 temps caché</button>
       <button id="btn-sound" class="opt" aria-pressed="true" title="Activer ou couper le son">🔊 son</button>
     </div>
@@ -81,8 +80,10 @@
           </svg>
           <div id="countdown"></div>
         </div>
-        <button id="btn-pause" title="Pause / reprendre" aria-label="Pause ou reprendre le minuteur">⏸</button>
-        <button id="btn-plus" title="Ajouter une minute" aria-label="Ajouter une minute">+ 1 min</button>
+        <div class="timer-btns">
+          <button id="btn-pause" title="Pause / reprendre" aria-label="Pause ou reprendre le minuteur">⏸</button>
+          <button id="btn-plus" title="Ajouter une minute" aria-label="Ajouter une minute">+ 1 min</button>
+        </div>
       </div>
       <button id="btn-finish" title="Le gage est fait — arrêter le minuteur">Terminé ✔</button>
       <div id="status"></div>

@@ -26,7 +26,7 @@ Contexte pour Claude Code (et tout humain qui débarque). Résume ce qui a été
 - **Cache stale-while-revalidate** : dernier CSV en localStorage (clé liée à `SHEET_ID`), affichage instantané puis re-fetch en arrière-plan ; note « données mises à jour » si changement (sélection de keywords préservée), note « injoignable — cache » si hors ligne.
 - **PWA** : installable (manifest, icônes 🎲 générées par canvas), `sw.js` network-first avec repli cache pour le shell (`gage-v2`).
 - Protection anti-fausse-manip : remplacer un gage en cours = 2 clics en 3 s.
-- Options persistées : 🔥 intensité (Surprise penche vers hard au fil des tirages, 20 %→85 %), 🙈 temps caché (compte à rebours et anneau masqués), 🔊/🔇 son.
+- Options persistées : 🙈 temps caché (compte à rebours et anneau masqués), 🔊/🔇 son.
 - Score de session par joueur (« Lui / Elle », 1 point max par gage terminé, ↺ pour reset), colonne `weight` optionnelle (pondération des tirages), tap sur le gage = affichage plein écran.
 - Couleurs : soft orange, hard rouge sang (`--soft`/`--hard`) ; logos ♂ bleu / ♀ rose (`--man`/`--woman`, SVG inline — pas de glyphes Unicode, Firefox les rendait en emoji).
 
