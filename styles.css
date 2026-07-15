@@ -95,13 +95,6 @@ body {
 .ptoggle:hover { filter: none; color: var(--text); }
 .ptoggle.active { background: var(--rose); color: #fff; }
 .ptoggle.active:hover { color: #fff; }
-.turn-label {
-  font-size: 0.78rem;
-  color: var(--rose);
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  min-height: 1rem;
-}
 
 /* Option toggles + category chips --------------------------------- */
 .options {
@@ -112,20 +105,22 @@ body {
 }
 .opt {
   flex: none;
-  font-size: 0.84rem;
-  font-weight: 600;
-  padding: 0.5rem 0.875rem;
+  width: 3.4rem;
+  height: 3.4rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem; /* icon-only toggles (label via aria-label/title) */
   border-radius: 999px;
   background: var(--off-bg);
   border: 1.5px solid var(--off-border);
   color: var(--muted);
   transition: all .15s;
 }
-.opt:hover { filter: none; color: var(--text); }
+.opt:hover { filter: none; }
 .opt.active {
   background: var(--rose-tint);
   border-color: var(--rose);
-  color: var(--rose);
 }
 .keywords {
   display: flex;
@@ -146,8 +141,8 @@ body {
   transition: all .15s;
 }
 .kw:hover { filter: none; color: var(--text); }
+/* Selected = highlighted outline only (no tick, no fill) */
 .kw.active {
-  background: var(--cat-tint);
   border-color: var(--cat);
   color: var(--cat);
 }
@@ -163,15 +158,6 @@ body {
   white-space: nowrap;
 }
 .kw-all:hover { filter: none; color: var(--text); border-color: var(--muted); }
-/* Fixed-width check so the chip never resizes when toggled */
-.kw::before {
-  content: "";
-  display: inline-block;
-  width: 0;
-  overflow: hidden;
-  transition: width .12s;
-}
-.kw.active::before { content: "✓"; width: 0.9em; }
 
 /* Intensity slider + GO -------------------------------------------- */
 .intensity-block {

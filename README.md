@@ -5,12 +5,12 @@
 ## What the site does
 
 0. **PIN lock**: the app opens on an access-code screen (numeric keypad) and no content is shown until the correct 4-digit code is entered. The code is `1310` (constant `ACCESS_PIN` at the top of `app.js`). Once unlocked, the app stays open for the rest of the browser session (`sessionStorage`); closing the tab re-locks it.
-1. You select the player at the top of the page (**♂ Lui / ♀ Elle**, remembered between visits); a line below shows whose turn it is. The **🔁 chacun son tour** toggle alternates the player automatically after each gage.
-2. Option toggles: **🙈 temps caché** (the countdown and ring are masked — you don't know when it will ring) and **🔊 son** (mute/unmute the end sound). All persisted.
+1. You select the player at the top of the page (**♂ Lui / ♀ Elle**, remembered between visits).
+2. Icon-only option toggles: **🔁** alternates the player automatically after each gage, **🙈** hides the remaining time (you don't know when it will ring) and **🔊** mutes/unmutes the end sound. All persisted.
 3. You optionally narrow the pool with the **keyword filter chips** (all enabled by default; click to toggle). A **Tout / Rien** chip selects or clears them all at once.
-4. You set the **intensity slider** (1–10) and press **GO**.
+4. You set the **intensity slider** (1–10) and press **GO**. The value is a **maximum**: the draw uses gages at that exact level, or falls back to the next level below when there are none (never above).
 4. The page answers with:
-   - a random activity whose intensity is **closest to the slider value** (exact match when available, otherwise the nearest on either side), filtered by player (entries marked `both` apply to everyone) and by the selected keywords
+   - a random activity at the highest available intensity ≤ the slider, filtered by player (entries marked `both` apply to everyone) and by the selected keywords
    - a random whole number of minutes drawn between that activity's `min` and `max`
 5. A **countdown timer** is shown inside a **progress ring** coloured by the drawn gage's intensity (green → gold → red; green when done). It does **not** start on its own — the gage appears with the timer stopped (the ring gently pulses); **tap the ring to start it** (tap again to pause/resume), so you can measure the time spent on the task. When it reaches zero the timer turns green, shows "Time's up!", plays a short sound — a segment of `SF-cum.mp3` defined by the `END_SOUND_START` / `END_SOUND_END` constants (in seconds) at the top of `app.js` — and vibrates on mobile. Next to the timer, **⏸** pauses/resumes the countdown and **+ 1 min** adds a minute (and restarts the countdown if time was already up). The **🔀 Passer** button draws a different gage with the same settings, and **Terminé ✔** stops the timer early when the gage is done — same celebration (sound, vibration, green ring) — and the app waits for the next draw. The countdown is **wall-clock based**, so it stays accurate even if the tab is backgrounded (where browsers throttle timers).
 

@@ -123,7 +123,6 @@ const totalGagesEl = document.getElementById("total-gages");
 const zoomEl = document.getElementById("zoom");
 const ringEl = document.getElementById("ring");
 const ringWrap = document.getElementById("ring-wrap");
-const turnLabelEl = document.getElementById("turn-label");
 const RING_CIRC = 2 * Math.PI * 95;
 
 function parseCsv(text) {
@@ -492,19 +491,6 @@ function setPlayer(p) {
   btnFemme.classList.toggle("active", p === "femme");
   btnHomme.setAttribute("aria-pressed", String(p === "homme"));
   btnFemme.setAttribute("aria-pressed", String(p === "femme"));
-  updateTurnLabel();
-}
-
-// Only meaningful when alternating (it says whose turn it now is);
-// otherwise it just repeats the player selector, so hide it.
-function updateTurnLabel() {
-  if (!alternate) {
-    turnLabelEl.textContent = "";
-    turnLabelEl.style.display = "none";
-    return;
-  }
-  turnLabelEl.style.display = "";
-  turnLabelEl.textContent = "Au tour de : " + (player === "homme" ? "Lui" : "Elle");
 }
 
 // Colour for an intensity 1-10: green (mild) -> gold -> red (extreme).
@@ -558,10 +544,18 @@ function pick() {
     errorEl.style.display = "block";
     return;
   }
-  // Keep the gages whose intensity is closest to the slider value (exact
-  // match when it exists, otherwise the nearest available on either side).
-  const dMin = Math.min(...list.map(g => Math.abs(g.intensity - intensityLevel)));
-  list = list.filter(g => Math.abs(g.intensity - intensityLevel) === dMin);
+  // The slider is a MAX intensity: draw at that level, and when it has no
+  // gage, fall back to the next level below — never above.
+  let pool = [];
+  for (let lvl = intensityLevel; lvl >= 1 && !pool.length; lvl--) {
+    pool = list.filter(g => g.intensity === lvl);
+  }
+  if (!pool.length) {
+    errorEl.textContent = "Aucun gage d'intensité " + intensityLevel + " ou moins dans cette sélection.";
+    errorEl.style.display = "block";
+    return;
+  }
+  list = pool;
   if (p !== player) setPlayer(p);
   hasPicked = true;
   errorEl.style.display = "none";
@@ -643,7 +637,6 @@ const paintAlternate = bindToggle(btnAlternate, "alternate", (on) => {
   alternate = on;
   localStorage.setItem("alternate", on ? "1" : "0");
   paintAlternate(on);
-  updateTurnLabel();
 });
 
 const paintHidden = bindToggle(btnHidden, "hiddenTime", (on) => {
@@ -658,7 +651,7 @@ const paintSound = bindToggle(btnSound, "muted", (on) => {
   muted = !on; // the toggle shows "sound ON"
   localStorage.setItem("muted", muted ? "1" : "0");
   paintSound(on);
-  btnSound.textContent = muted ? "🔇 son" : "🔊 son";
+  btnSound.textContent = muted ? "🔇" : "🔊";
 });
 
 // Fullscreen gage display ----------------------------------------------
@@ -825,7 +818,7 @@ paintAlternate(alternate);
 paintHidden(hiddenTime);
 paintIntensity();
 paintSound(!muted);
-btnSound.textContent = muted ? "🔇 son" : "🔊 son";
+btnSound.textContent = muted ? "🔇" : "🔊";
 // The read-aloud button stays available: neural TTS works via /api/tts even
 // where the browser has no speechSynthesis. Warm the browser voice list
 // (loads asynchronously) so the fallback voice is ready on first press.
