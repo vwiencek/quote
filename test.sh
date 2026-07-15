@@ -27,9 +27,9 @@ check_url styles.css
 check_url app.js
 check_url manifest.json
 check_url sw.js
-check_url icon-192.png
-check_url icon-512.png
-check_url icon-180.png
+check_url assets/icon-192.png
+check_url assets/icon-512.png
+check_url assets/icon-180.png
 
 SOUND=$(sed -n 's/.*const END_SOUND_URL = "\([^"]*\)".*/\1/p' app.js)
 [ -n "$SOUND" ] && check_url "$SOUND"

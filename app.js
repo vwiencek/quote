@@ -66,7 +66,7 @@ const MAX_MINUTES = 10;
 
 // Sound played when the timer ends: the segment [START, END] (seconds)
 // of the mp3 below. Adjust the two timestamps to taste.
-const END_SOUND_URL = "SF-cum.mp3";
+const END_SOUND_URL = "assets/SF-cum.mp3";
 const END_SOUND_START = 0;
 const END_SOUND_END = 3;
 

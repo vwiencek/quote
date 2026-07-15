@@ -50,9 +50,9 @@ The sheet must be shared as **"anyone with the link can view"** for the page to 
 | `index.html` | The markup |
 | `styles.css` | The stylesheet |
 | `app.js` | The logic |
-| `SF-cum.mp3` | Sound played when the timer ends |
 | `manifest.json` / `sw.js` | PWA install + offline app shell |
-| `icon-*.png` | App icons (home screen / Apple touch) |
+| `assets/SF-cum.mp3` | Sound played when the timer ends |
+| `assets/icon-*.png` | App icons (home screen / Apple touch) |
 | `serve.sh` | Start a local server to preview the site |
 | `test.sh` | Smoke-test the site locally |
 
