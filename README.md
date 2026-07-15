@@ -21,7 +21,7 @@ Extra behavior:
 - **Sheet cache (stale-while-revalidate)**: the last CSV is kept in localStorage (keyed by sheet ID) and rendered instantly on load, then the sheet is always re-fetched in the background — if it changed, data and keyword chips refresh in place (keeping your selection) with a "données mises à jour" note; if the network is down, the page runs on the cached copy and says so.
 - **Mis-tap protection**: while a timer runs, replacing the gage takes two clicks within 3 seconds.
 - **Session score**: completed gages are counted per player ("Score : Lui X — Elle Y" at the bottom, ↺ to reset; one point max per gage). It's kept in `sessionStorage`, so it resets when you close the tab.
-- **Read aloud**: a **🔈 Lire le gage** button reads the current gage out loud (browser speech synthesis, French voice when available; click again to stop). Hidden if the browser has no speech support. No external service.
+- **Read aloud**: a **🔈 Lire le gage** button reads the current gage out loud (click again to stop). It uses a natural **neural voice** via the `/api/tts` proxy when configured (see "Voice / TTS setup"), and otherwise falls back to the browser's built-in speech synthesis (offline-friendly).
 - **Giant display**: tap (or focus + Enter/Space) the gage text to show it fullscreen (tap, or Escape, to close). Focus returns to the gage on close.
 - **Accessible**: live regions announce the drawn gage, status and errors; the fullscreen view is keyboard-operable; visible keyboard focus throughout.
 - **No external dependencies**: the Onest font is self-hosted (`assets/fonts/`), so there are no requests to Google Fonts and typography works fully offline.
@@ -77,6 +77,21 @@ Then open <http://localhost:8001>. Edit `index.html` and refresh — no build st
 
 Starts a temporary server, checks that the page, PWA assets and mp3 are served, and validates the Google Sheet: reachable, contains `soft` and `hard` entries, and per-row sanity (level, player, min/max, keyword). Incomplete rows that the app tolerates are reported as warnings; only real breakage fails the test.
 
+## Voice / TTS setup (optional)
+
+The read-aloud button works out of the box with the browser's built-in voice. For a much more natural **neural voice**, the app calls a tiny serverless proxy at `/api/tts` (`api/tts/`), an Azure Function that forwards the text to **Azure Neural TTS**. The subscription key stays server-side and never reaches the browser.
+
+To enable it:
+
+1. Create an **Azure AI Speech** resource (free tier: 500k characters/month) and note its **key** (either Key 1 or Key 2 works) and **region** (e.g. `westeurope`).
+2. In the **Static Web App → Configuration → Application settings**, add:
+   - `SPEECH_KEY` = the key
+   - `SPEECH_REGION` = the region
+   - `SPEECH_VOICE` (optional) = e.g. `fr-FR-DeniseNeural` (default), `fr-FR-HenriNeural`, `fr-FR-VivienneMultilingualNeural`
+3. Save — the running function picks the settings up. (These are **runtime app settings**, not GitHub secrets; GitHub secrets are build-time only and won't reach the function.)
+
+Until it's configured, `/api/tts` returns 503 and the app silently uses the browser voice. Never commit the key to the repo.
+
 ## Deployment
 
-Every push to `main` deploys automatically to Azure Static Web Apps via the GitHub Actions workflow in `.github/workflows/`.
+Every push to `main` deploys automatically to Azure Static Web Apps via the GitHub Actions workflow in `.github/workflows/`. The workflow's `api_location: "api"` also deploys the TTS function.

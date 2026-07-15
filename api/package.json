@@ -1,0 +1,10 @@
+{
+  "name": "quote-api",
+  "version": "1.0.0",
+  "description": "Neural TTS proxy for Donne-moi un gage",
+  "private": true,
+  "main": "tts/index.js",
+  "engines": {
+    "node": ">=18"
+  }
+}

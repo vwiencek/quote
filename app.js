@@ -677,23 +677,44 @@ function closeZoom() {
   itemEl.focus(); // return focus to the trigger
 }
 
-// Read the gage aloud with the browser's speech synthesis (French voice
-// if one is available). Toggles: pressing again stops. No external service.
+// Read the gage aloud. Prefers a natural neural voice via the /api/tts
+// proxy (Azure), and falls back to the browser's built-in speech synthesis
+// when the API is unavailable (offline, or not yet configured). Pressing
+// again stops. No API key ever reaches the client.
 const canSpeak = "speechSynthesis" in window && typeof SpeechSynthesisUtterance !== "undefined";
+// Tiny silent clip: playing it during the click gesture unlocks the audio
+// element on iOS so the (async-fetched) neural MP3 can play afterwards.
+const SILENT_WAV = "data:audio/wav;base64,UklGRrQBAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YZABAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA";
+let ttsAudio = null;   // persistent, unlocked audio element for neural playback
+let ttsReqId = 0;      // cancels an in-flight request when the user hits stop
 
 function setSpeakState(speaking) {
   btnSpeak.textContent = speaking ? "⏹ Stop" : "🔈 Lire le gage";
   btnSpeak.classList.toggle("speaking", speaking);
 }
 
+function ensureTtsAudio() {
+  if (ttsAudio) return;
+  ttsAudio = new Audio(SILENT_WAV);
+  ttsAudio.preload = "auto";
+  ttsAudio.play().then(() => { ttsAudio.pause(); ttsAudio.currentTime = 0; }).catch(() => {});
+}
+
+function isSpeaking() {
+  return (ttsAudio && !ttsAudio.paused && !ttsAudio.ended && ttsAudio.currentSrc.indexOf("wav") === -1)
+    || (canSpeak && speechSynthesis.speaking);
+}
+
 function stopSpeaking() {
+  ttsReqId++; // invalidate any in-flight neural request
+  if (ttsAudio) ttsAudio.pause();
   if (canSpeak) speechSynthesis.cancel();
   setSpeakState(false);
 }
 
-// Pick the most natural-sounding French voice available: enhanced / neural
-// voices and the Google/Apple named ones beat the default "compact" voice
-// that sounds robotic.
+// Pick the most natural-sounding French voice available (browser fallback):
+// enhanced / neural and Google/Apple named voices beat the default "compact"
+// voice that sounds robotic.
 function pickFrenchVoice() {
   let fr = speechSynthesis.getVoices().filter(v => (v.lang || "").toLowerCase().startsWith("fr"));
   if (!fr.length) return null;
@@ -715,10 +736,10 @@ function pickFrenchVoice() {
   return fr.slice().sort((a, b) => rank(b) - rank(a))[0];
 }
 
-function speakGage() {
-  if (!canSpeak || !itemEl.textContent) return;
-  if (speechSynthesis.speaking) { stopSpeaking(); return; }
-  const u = new SpeechSynthesisUtterance(itemEl.textContent);
+function speakBrowser(text) {
+  if (!canSpeak) { setSpeakState(false); return; }
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
   u.lang = "fr-FR";
   const voice = pickFrenchVoice();
   if (voice) u.voice = voice;
@@ -728,6 +749,34 @@ function speakGage() {
   u.onerror = () => setSpeakState(false);
   setSpeakState(true);
   speechSynthesis.speak(u);
+}
+
+async function speakGage() {
+  if (!itemEl.textContent) return;
+  if (isSpeaking()) { stopSpeaking(); return; }
+  const text = itemEl.textContent;
+  ensureTtsAudio();          // unlock audio within the click gesture (iOS)
+  const reqId = ++ttsReqId;
+  setSpeakState(true);
+  try {
+    const res = await fetch("/api/tts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text }),
+    });
+    const ct = res.headers.get("content-type") || "";
+    if (!res.ok || ct.indexOf("audio") === -1) throw new Error("tts unavailable");
+    const url = URL.createObjectURL(await res.blob());
+    if (reqId !== ttsReqId) { URL.revokeObjectURL(url); return; } // stopped meanwhile
+    ttsAudio.onended = () => setSpeakState(false);
+    ttsAudio.onerror = () => setSpeakState(false);
+    ttsAudio.src = url;
+    ttsAudio.currentTime = 0;
+    await ttsAudio.play();
+  } catch (e) {
+    if (reqId !== ttsReqId) return;
+    speakBrowser(text); // offline / API not configured -> browser voice
+  }
 }
 
 // "Passer": draw a different gage at the same level without tripping the
@@ -774,9 +823,9 @@ paintAlternate(alternate);
 paintHidden(hiddenTime);
 paintSound(!muted);
 btnSound.textContent = muted ? "🔇 son" : "🔊 son";
-if (!canSpeak) btnSpeak.style.display = "none"; // no speech synthesis support
-// Voices load asynchronously on some browsers — warm the list so the best
-// French voice is ready by the first press.
+// The read-aloud button stays available: neural TTS works via /api/tts even
+// where the browser has no speechSynthesis. Warm the browser voice list
+// (loads asynchronously) so the fallback voice is ready on first press.
 if (canSpeak) {
   speechSynthesis.getVoices();
   speechSynthesis.addEventListener("voiceschanged", () => speechSynthesis.getVoices());
