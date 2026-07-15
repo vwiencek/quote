@@ -502,10 +502,16 @@ function setPlayer(p) {
   updateTurnLabel();
 }
 
-// "Au tour de …" when alternating, "Gage pour …" otherwise.
+// Only meaningful when alternating (it says whose turn it now is);
+// otherwise it just repeats the player selector, so hide it.
 function updateTurnLabel() {
-  const who = player === "homme" ? "Lui" : "Elle";
-  turnLabelEl.textContent = (alternate ? "Au tour de : " : "Gage pour : ") + who;
+  if (!alternate) {
+    turnLabelEl.textContent = "";
+    turnLabelEl.style.display = "none";
+    return;
+  }
+  turnLabelEl.style.display = "";
+  turnLabelEl.textContent = "Au tour de : " + (player === "homme" ? "Lui" : "Elle");
 }
 
 // Highlight the intensity button that was last pressed (soft / surprise /
