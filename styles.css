@@ -173,36 +173,72 @@ body {
 }
 .kw.active::before { content: "✓"; width: 0.9em; }
 
-/* Intensity buttons ------------------------------------------------ */
-.buttons {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 0.625rem;
+/* Intensity slider + GO -------------------------------------------- */
+.intensity-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
 }
-.lvl {
+.slider-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.slider-label {
+  flex: none;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+#intensity-val {
+  flex: none;
+  width: 1.6rem;
+  text-align: center;
+  font-size: 1.15rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+#intensity {
+  flex: 1;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 8px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--soft), var(--surprise), var(--hard));
+  outline-offset: 4px;
+  cursor: pointer;
+}
+#intensity::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  background: #fff;
+  border: 3px solid var(--card);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+  cursor: pointer;
+}
+#intensity::-moz-range-thumb {
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  background: #fff;
+  border: 3px solid var(--card);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+  cursor: pointer;
+}
+#btn-go {
   padding: 0.875rem 0;
   border-radius: 12px;
-  font-size: 1rem;
-  font-weight: 600;
+  font-size: 1.05rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
   text-align: center;
-  background: transparent;
-  transition: all .15s;
-}
-.lvl.soft { color: var(--soft); border: 1.5px solid rgba(70, 181, 138, 0.4); }
-.lvl.surprise { color: var(--surprise); border: 1.5px solid rgba(217, 160, 62, 0.4); }
-.lvl.hard { color: var(--hard); border: 1.5px solid rgba(224, 73, 95, 0.4); }
-.lvl:hover { filter: brightness(1.15); }
-.lvl.soft.active {
-  background: var(--soft); color: var(--soft-on); border-color: var(--soft);
-  font-weight: 700; box-shadow: 0 8px 22px rgba(70, 181, 138, 0.33);
-}
-.lvl.surprise.active {
-  background: var(--surprise); color: var(--surprise-on); border-color: var(--surprise);
-  font-weight: 700; box-shadow: 0 8px 22px rgba(217, 160, 62, 0.33);
-}
-.lvl.hard.active {
-  background: var(--hard); color: var(--hard-on); border-color: var(--hard);
-  font-weight: 700; box-shadow: 0 8px 22px rgba(224, 73, 95, 0.33);
+  color: #fff;
+  background: var(--hard); /* repainted by JS to the slider's colour */
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.35);
+  transition: background .2s ease, transform .1s ease, filter .15s ease;
 }
 
 /* Result: dare + timer + finish ----------------------------------- */
@@ -284,14 +320,14 @@ button:disabled { filter: grayscale(.5); opacity: .6; cursor: not-allowed; }
 .ring-bg { fill: none; stroke: var(--ring-track); stroke-width: 13; }
 .ring-fg {
   fill: none;
-  stroke: var(--soft);
+  /* --ring-color is set by JS to the drawn gage's intensity colour */
+  stroke: var(--ring-color, var(--soft));
   stroke-width: 13;
   stroke-linecap: round;
   stroke-dasharray: 596.903; /* 2 * pi * r(95) */
   stroke-dashoffset: 0;
   transition: stroke-dashoffset 1s linear, stroke .3s ease;
 }
-.ring-wrap.hard .ring-fg { stroke: var(--hard); }
 .ring-wrap.done .ring-fg { stroke: var(--done); }
 #countdown {
   position: absolute;

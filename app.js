@@ -53,13 +53,11 @@ const ACCESS_PIN = "1310";
 })();
 
 // Data comes from a Google Sheet shared as "anyone with the link can view".
-// Row-based format: columns "gage" (text), "player" (homme/femme/both),
-// "min" / "max" (duration bounds in minutes), "keyword" (one or more
-// filter tags, comma-separated),
-// "weight" (optional draw weight, default 1) and "level" (soft/hard;
-// the legacy "type" header is also accepted).
-// A column-based layout (one soft column, one hard column) is still
-// supported; such entries apply to both players with default durations.
+// One gage per row: a text column whose header contains "gage" (e.g.
+// "Gage détaillé"), "player" (homme/femme/both), "min" / "max" (duration
+// bounds in minutes), "keyword" (one or more filter tags, comma-separated),
+// "weight" (optional draw weight, default 1) and "intensité" (1-10; the
+// slider draws among the gages closest to the chosen value).
 const SHEET_ID = "1eSbNFqS38as8rDRG5yLwZljaFEV1aUk-dR4_718YBMM";
 const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/" + SHEET_ID + "/gviz/tq?tqx=out:csv";
 const MIN_MINUTES = 1;
@@ -85,6 +83,8 @@ let totalSeconds = 0;
 let endAt = 0; // wall-clock timestamp (ms) when the countdown reaches zero
 let alternate = localStorage.getItem("alternate") === "1";
 let hiddenTime = localStorage.getItem("hiddenTime") === "1";
+// Intensity slider (1-10), persisted; default in the middle of the scale.
+let intensityLevel = Math.min(10, Math.max(1, parseInt(localStorage.getItem("intensityLevel"), 10) || 7));
 let muted = localStorage.getItem("muted") === "1";
 // Score is per playing session (reset when the tab is closed), matching
 // the "score de session" intent — kept in sessionStorage.
@@ -101,8 +101,9 @@ const countdownEl = document.getElementById("countdown");
 const statusEl = document.getElementById("status");
 const resultEl = document.getElementById("result");
 const errorEl = document.getElementById("error");
-const btnSoft = document.getElementById("btn-soft");
-const btnHard = document.getElementById("btn-hard");
+const btnGo = document.getElementById("btn-go");
+const intensitySlider = document.getElementById("intensity");
+const intensityValEl = document.getElementById("intensity-val");
 const btnPlus = document.getElementById("btn-plus");
 const btnPause = document.getElementById("btn-pause");
 const btnFinish = document.getElementById("btn-finish");
@@ -112,7 +113,6 @@ const btnHomme = document.getElementById("player-homme");
 const btnFemme = document.getElementById("player-femme");
 const keywordsEl = document.getElementById("keywords");
 const noteEl = document.getElementById("note");
-const btnSurprise = document.getElementById("btn-surprise");
 const btnAlternate = document.getElementById("btn-alternate");
 const btnHidden = document.getElementById("btn-hidden");
 const btnSound = document.getElementById("btn-sound");
@@ -158,54 +158,39 @@ function splitKeywords(cellValue) {
 
 function csvToActivities(text) {
   const rows = parseCsv(text);
-  if (!rows.length || !rows[0]) return {}; // empty/malformed input -> invalid
+  if (!rows.length || !rows[0]) return []; // empty/malformed input -> invalid
   const headers = rows[0].map(h => h.trim().toLowerCase());
   const idx = {};
   headers.forEach((h, i) => { if (h && !(h in idx)) idx[h] = i; });
-  const data = {};
-
-  const levelIdx = "level" in idx ? idx.level : idx.type;
-  if (levelIdx !== undefined) {
-    // Row-based format: one entry per row.
-    const textIdx = "gage" in idx
-      ? idx.gage
-      : headers.findIndex((h, i) => h && i !== levelIdx);
-    const cell = (r, i) => (i !== undefined && r[i] !== undefined ? r[i] : "").trim();
-    for (const r of rows.slice(1)) {
-      const value = cell(r, textIdx);
-      const key = cell(r, levelIdx).toLowerCase();
-      if (!value || !key) continue;
-      const weight = parseFloat(cell(r, idx.weight));
-      (data[key] = data[key] || []).push({
-        text: value,
-        player: cell(r, idx.player).toLowerCase() || "both",
-        min: parseInt(cell(r, idx.min), 10),
-        max: parseInt(cell(r, idx.max), 10),
-        keywords: splitKeywords(cell(r, idx.keyword)),
-        weight: Number.isFinite(weight) && weight > 0 ? weight : 1,
-      });
-    }
-  } else {
-    // Column-based format: one column per key.
-    headers.forEach(h => { if (h) data[h] = []; });
-    for (const r of rows.slice(1)) {
-      r.forEach((value, i) => {
-        const key = headers[i];
-        if (key && value && value.trim()) {
-          data[key].push({ text: value.trim(), player: "both", min: NaN, max: NaN, keywords: [], weight: 1 });
-        }
-      });
-    }
+  // Text column: "gage" or any header containing it ("gage détaillé"...).
+  const textIdx = "gage" in idx
+    ? idx.gage
+    : headers.findIndex(h => h && h.includes("gage"));
+  const intIdx = ["intensité", "intensite", "intensity"]
+    .map(k => idx[k]).find(v => v !== undefined);
+  if (textIdx === -1 || intIdx === undefined) return [];
+  const cell = (r, i) => (i !== undefined && r[i] !== undefined ? r[i] : "").trim();
+  const data = [];
+  for (const r of rows.slice(1)) {
+    const value = cell(r, textIdx);
+    const intensity = parseInt(cell(r, intIdx), 10);
+    if (!value || !Number.isFinite(intensity)) continue; // no text/intensity -> skipped
+    const weight = parseFloat(cell(r, idx.weight));
+    data.push({
+      text: value,
+      player: cell(r, idx.player).toLowerCase() || "both",
+      min: parseInt(cell(r, idx.min), 10),
+      max: parseInt(cell(r, idx.max), 10),
+      keywords: splitKeywords(cell(r, idx.keyword)),
+      weight: Number.isFinite(weight) && weight > 0 ? weight : 1,
+      intensity: Math.min(10, Math.max(1, intensity)),
+    });
   }
   return data;
 }
 
 function isValid(data) {
-  // At least one level bucket must have entries; a sheet with only
-  // soft (or only hard) gages is valid — the draw handles empty pools.
-  return data &&
-    ((Array.isArray(data.soft) && data.soft.length > 0) ||
-     (Array.isArray(data.hard) && data.hard.length > 0));
+  return Array.isArray(data) && data.length > 0;
 }
 
 // Cache keys are bound to the sheet: switching SHEET_ID never shows
@@ -225,15 +210,15 @@ function applyData(text) {
   const data = csvToActivities(text);
   if (!isValid(data)) return false;
   activities = data;
+  btnGo.disabled = false;
   renderKeywords();
   updateTotalGages();
   return true;
 }
 
-// Total number of gages loaded from the sheet (all levels combined).
+// Total number of gages loaded from the sheet.
 function updateTotalGages() {
-  let n = 0;
-  for (const k of Object.keys(activities)) n += activities[k].length;
+  const n = activities.length;
   totalGagesEl.textContent = n + " gage" + (n > 1 ? "s" : "") + " au total";
 }
 
@@ -282,9 +267,7 @@ async function loadData() {
       showNote("Feuille Google injoignable — utilisation des données en cache" + cacheAge() + ".");
       console.warn("Sheet unreachable (" + err.message + "), using cached data");
     } else {
-      btnSoft.disabled = true;
-      btnHard.disabled = true;
-      btnSurprise.disabled = true;
+      btnGo.disabled = true;
       errorEl.textContent = "Impossible de charger les gages depuis la feuille Google (" +
         err.message + "). Vérifie que la feuille est partagée en « Tous les utilisateurs disposant du lien ».";
       errorEl.style.display = "block";
@@ -452,11 +435,9 @@ let keywordUniverse = null;
 
 function renderKeywords() {
   const keywords = [];
-  for (const key of Object.keys(activities)) {
-    for (const g of activities[key]) {
-      for (const kw of g.keywords) {
-        if (!keywords.includes(kw)) keywords.push(kw);
-      }
+  for (const g of activities) {
+    for (const kw of g.keywords) {
+      if (!keywords.includes(kw)) keywords.push(kw);
     }
   }
   if (keywordUniverse) {
@@ -526,14 +507,19 @@ function updateTurnLabel() {
   turnLabelEl.textContent = "Au tour de : " + (player === "homme" ? "Lui" : "Elle");
 }
 
-// Highlight the intensity button that was last pressed (soft / surprise /
-// hard); the resulting soft/hard draw still drives the ring colour.
-let selectedLevel = null;
-function paintLevel(key) {
-  selectedLevel = key;
-  btnSoft.classList.toggle("active", key === "soft");
-  btnSurprise.classList.toggle("active", key === "surprise");
-  btnHard.classList.toggle("active", key === "hard");
+// Colour for an intensity 1-10: green (mild) -> gold -> red (extreme).
+function intensityColor(i) {
+  const hue = Math.round(145 * (10 - i) / 9); // 1 -> 145 (green), 10 -> 0 (red)
+  return "hsl(" + hue + ", 62%, 52%)";
+}
+
+// Reflect the slider position: value bubble + GO button tinted to match.
+function paintIntensity() {
+  intensitySlider.value = String(intensityLevel);
+  intensityValEl.textContent = String(intensityLevel);
+  const c = intensityColor(intensityLevel);
+  intensityValEl.style.color = c;
+  btnGo.style.background = c;
 }
 
 function weightedPick(list) {
@@ -546,8 +532,8 @@ function weightedPick(list) {
   return list[list.length - 1];
 }
 
-function pick(key) {
-  if (!activities) return;
+function pick() {
+  if (!activities || !activities.length) return;
   ensureAudio();
   // Guard against accidental taps: replacing a running gage takes two
   // clicks within 3 seconds.
@@ -564,7 +550,7 @@ function pick(key) {
   const p = (alternate && hasPicked && !rerolling)
     ? (player === "homme" ? "femme" : "homme")
     : player;
-  const list = (activities[key] || []).filter(g =>
+  let list = activities.filter(g =>
     (g.player === "both" || g.player === p) &&
     (!g.keywords.length || g.keywords.some(kw => selectedKeywords.has(kw))));
   if (!list.length) {
@@ -572,6 +558,10 @@ function pick(key) {
     errorEl.style.display = "block";
     return;
   }
+  // Keep the gages whose intensity is closest to the slider value (exact
+  // match when it exists, otherwise the nearest available on either side).
+  const dMin = Math.min(...list.map(g => Math.abs(g.intensity - intensityLevel)));
+  list = list.filter(g => Math.abs(g.intensity - intensityLevel) === dMin);
   if (p !== player) setPlayer(p);
   hasPicked = true;
   errorEl.style.display = "none";
@@ -598,21 +588,23 @@ function pick(key) {
   gageCounted = false;
 
   stopSpeaking(); // a new gage is showing — cancel any ongoing read
-  badge.textContent = key;
-  badge.className = "badge " + key;
+  badge.textContent = "intensité " + gage.intensity;
   itemEl.textContent = gage.text;
   countdownEl.classList.remove("done");
   // Draw in a stopped "ready" state — the timer starts on the user's tap.
   clearInterval(timerId);
   timerId = null;
   paused = false;
-  ringWrap.className = "ring-wrap ready" + (key === "hard" ? " hard" : "");
+  ringWrap.className = "ring-wrap ready";
+  // The ring takes the drawn gage's intensity colour (green -> red).
+  ringWrap.style.setProperty("--ring-color", intensityColor(gage.intensity));
   btnPause.textContent = "▶";
   btnPause.disabled = false;
   btnFinish.disabled = false;
   renderCountdown();
   updateRing();
   statusEl.textContent = "Appuie sur le minuteur pour démarrer" +
+    (gage.intensity !== intensityLevel ? " (intensité " + gage.intensity + ")" : "") +
     (newRound ? " (nouvelle tournée)" : "");
   resultEl.classList.add("visible");
 }
@@ -668,15 +660,6 @@ const paintSound = bindToggle(btnSound, "muted", (on) => {
   paintSound(on);
   btnSound.textContent = muted ? "🔇 son" : "🔊 son";
 });
-
-// "Surprise" picks a level (soft or hard) at random.
-function surprise() {
-  if (!activities) return;
-  const levels = ["soft", "hard"].filter(k => (activities[k] || []).length);
-  if (!levels.length) return;
-  const level = levels[Math.floor(Math.random() * levels.length)];
-  pick(level);
-}
 
 // Fullscreen gage display ----------------------------------------------
 
@@ -800,11 +783,10 @@ async function speakGage() {
 // of the current turn, not a new one.
 let rerolling = false;
 function reroll() {
-  if (!resultEl.classList.contains("visible") || !selectedLevel) return;
+  if (!resultEl.classList.contains("visible")) return;
   replaceArmed = true;
   rerolling = true;
-  if (selectedLevel === "surprise") surprise();
-  else pick(selectedLevel);
+  pick();
   rerolling = false;
 }
 
@@ -814,9 +796,12 @@ function resetScore() {
   updateScoreDisplay();
 }
 
-btnSoft.addEventListener("click", () => { paintLevel("soft"); pick("soft"); });
-btnHard.addEventListener("click", () => { paintLevel("hard"); pick("hard"); });
-btnSurprise.addEventListener("click", () => { paintLevel("surprise"); surprise(); });
+btnGo.addEventListener("click", pick);
+intensitySlider.addEventListener("input", () => {
+  intensityLevel = parseInt(intensitySlider.value, 10);
+  localStorage.setItem("intensityLevel", String(intensityLevel));
+  paintIntensity();
+});
 btnPlus.addEventListener("click", addMinute);
 btnPause.addEventListener("click", togglePause);
 ringWrap.addEventListener("click", togglePause); // tap the ring to start / pause / resume
@@ -838,6 +823,7 @@ btnResetScore.addEventListener("click", resetScore);
 setPlayer(player);
 paintAlternate(alternate);
 paintHidden(hiddenTime);
+paintIntensity();
 paintSound(!muted);
 btnSound.textContent = muted ? "🔇 son" : "🔊 son";
 // The read-aloud button stays available: neural TTS works via /api/tts even

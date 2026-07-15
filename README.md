@@ -8,11 +8,11 @@
 1. You select the player at the top of the page (**♂ Lui / ♀ Elle**, remembered between visits); a line below shows whose turn it is. The **🔁 chacun son tour** toggle alternates the player automatically after each gage.
 2. Option toggles: **🙈 temps caché** (the countdown and ring are masked — you don't know when it will ring) and **🔊 son** (mute/unmute the end sound). All persisted.
 3. You optionally narrow the pool with the **keyword filter chips** (all enabled by default; click to toggle). A **Tout / Rien** chip selects or clears them all at once.
-4. You pick a level: **Soft**, **Hard** — or **Surprise**, which picks one at random.
+4. You set the **intensity slider** (1–10) and press **GO**.
 4. The page answers with:
-   - a random activity matching your level, filtered by player (entries marked `both` apply to everyone) and by the selected keywords
+   - a random activity whose intensity is **closest to the slider value** (exact match when available, otherwise the nearest on either side), filtered by player (entries marked `both` apply to everyone) and by the selected keywords
    - a random whole number of minutes drawn between that activity's `min` and `max`
-5. A **countdown timer** is shown inside a **progress ring** (green for soft, red for hard, green when done). It does **not** start on its own — the gage appears with the timer stopped (the ring gently pulses); **tap the ring to start it** (tap again to pause/resume), so you can measure the time spent on the task. When it reaches zero the timer turns green, shows "Time's up!", plays a short sound — a segment of `SF-cum.mp3` defined by the `END_SOUND_START` / `END_SOUND_END` constants (in seconds) at the top of `app.js` — and vibrates on mobile. Next to the timer, **⏸** pauses/resumes the countdown and **+ 1 min** adds a minute (and restarts the countdown if time was already up). The **🔀 Passer** button draws a different gage at the same level, and **Terminé ✔** stops the timer early when the gage is done — same celebration (sound, vibration, green ring) — and the app waits for the next draw. The countdown is **wall-clock based**, so it stays accurate even if the tab is backgrounded (where browsers throttle timers).
+5. A **countdown timer** is shown inside a **progress ring** coloured by the drawn gage's intensity (green → gold → red; green when done). It does **not** start on its own — the gage appears with the timer stopped (the ring gently pulses); **tap the ring to start it** (tap again to pause/resume), so you can measure the time spent on the task. When it reaches zero the timer turns green, shows "Time's up!", plays a short sound — a segment of `SF-cum.mp3` defined by the `END_SOUND_START` / `END_SOUND_END` constants (in seconds) at the top of `app.js` — and vibrates on mobile. Next to the timer, **⏸** pauses/resumes the countdown and **+ 1 min** adds a minute (and restarts the countdown if time was already up). The **🔀 Passer** button draws a different gage with the same settings, and **Terminé ✔** stops the timer early when the gage is done — same celebration (sound, vibration, green ring) — and the app waits for the next draw. The countdown is **wall-clock based**, so it stays accurate even if the tab is backgrounded (where browsers throttle timers).
 
 Extra behavior:
 
@@ -35,16 +35,16 @@ Activities are loaded at page load from a **Google Sheet** ([open](https://docs.
 
 | Column | Meaning |
 |--------|---------|
-| `gage` | The activity text |
+| `gage` | The activity text (any header containing "gage" works, e.g. `Gage détaillé`) |
 | `player` | Who it applies to: `homme`, `femme`, or `both` |
 | `min` / `max` | Duration bounds in minutes (a whole number is drawn in this range) |
 | `keyword` | Filter tag(s) — one or several, comma-separated (e.g. `soft, romantic`). Each distinct tag becomes a filter chip; a gage is drawn when **any** of its tags is selected |
 | `weight` | Optional draw weight (default 1) — higher = drawn more often |
-| `level` | `soft` or `hard` (the legacy `type` header is also accepted) |
+| `intensité` | Intensity from 1 (mild) to 10 (extreme) — the slider draws among the gages closest to the chosen value. Rows without it are ignored |
 
 Edit the sheet and refresh the page: no deploy needed.
 
-The sheet must be shared as **"anyone with the link can view"** for the page to read it (it is fetched as CSV from the browser). A column-based layout (one `soft` column, one `hard` column) is also supported; those entries apply to both players with 2–10 minute durations. If the sheet is unreachable, the page shows an error and disables the buttons.
+The sheet must be shared as **"anyone with the link can view"** for the page to read it (it is fetched as CSV from the browser). If the sheet is unreachable, the page shows an error and disables the GO button.
 
 ## Files
 
@@ -75,7 +75,7 @@ Then open <http://localhost:8001>. Edit `index.html` and refresh — no build st
 ./test.sh
 ```
 
-Starts a temporary server, checks that the page, PWA assets and mp3 are served, and validates the Google Sheet: reachable, contains `soft` and `hard` entries, and per-row sanity (level, player, min/max, keyword). Incomplete rows that the app tolerates are reported as warnings; only real breakage fails the test.
+Starts a temporary server, checks that the page, PWA assets and mp3 are served, and validates the Google Sheet: reachable, has usable gage rows, and per-row sanity (intensité 1–10, player, min/max, weight). Incomplete rows that the app tolerates are reported as warnings; only real breakage fails the test.
 
 ## Voice / TTS setup (optional)
 

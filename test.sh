@@ -45,31 +45,39 @@ rows = list(csv.reader(sys.stdin))
 assert rows, 'empty sheet'
 headers = [h.strip().lower() for h in rows[0]]
 idx = {h: i for i, h in enumerate(headers) if h}
-level_col = 'level' if 'level' in idx else ('type' if 'type' in idx else None)
-assert level_col, f'no level/type column in {headers}'
-text_idx = idx.get('gage', next(i for i, h in enumerate(headers) if h and i != idx[level_col]))
+int_col = next((idx[k] for k in ('intensité', 'intensite', 'intensity') if k in idx), None)
+assert int_col is not None, f'no intensité column in {headers}'
+text_idx = idx.get('gage', next((i for i, h in enumerate(headers) if h and 'gage' in h), None))
+assert text_idx is not None, f'no gage column in {headers}'
 
 def cell(r, i):
     return r[i].strip() if i is not None and i < len(r) else ''
 
 # The app tolerates missing player/min/max/keyword (defaults apply) and
-# skips rows without a level; those are reported as warnings, not failures.
-counts = collections.Counter()
+# skips rows without an intensity; those are warnings, not failures.
+count = 0
+dist = collections.Counter()
 warnings = []
 for n, r in enumerate(rows[1:], 2):
     text = cell(r, text_idx)
-    level = cell(r, idx[level_col]).lower()
-    if not text and not level:
+    intensity = cell(r, int_col)
+    if not text and not intensity:
         continue  # blank row
-    if not level:
-        warnings.append(f'row {n}: no level -> gage is ignored by the app')
+    if not intensity:
+        warnings.append(f'row {n}: no intensité -> gage is ignored by the app')
         continue
     if not text:
-        warnings.append(f'row {n}: level without gage text')
+        warnings.append(f'row {n}: intensité without gage text')
         continue
-    if level not in ('soft', 'hard'):
-        warnings.append(f'row {n}: unknown level {level!r} -> unreachable from the UI')
-    counts[level] += 1
+    try:
+        iv = int(intensity)
+        if not 1 <= iv <= 10:
+            warnings.append(f'row {n}: intensité {iv} out of 1-10 (app clamps it)')
+        dist[max(1, min(10, iv))] += 1
+    except ValueError:
+        warnings.append(f'row {n}: non-numeric intensité {intensity!r} -> gage is ignored')
+        continue
+    count += 1
     if 'player' in idx:
         p = cell(r, idx['player']).lower()
         if p and p not in ('homme', 'femme', 'both'):
@@ -86,12 +94,13 @@ for n, r in enumerate(rows[1:], 2):
             except (ValueError, AssertionError):
                 warnings.append(f'row {n}: bad weight {w!r} (app falls back to 1)')
 
-assert counts.get('soft', 0) > 0 or counts.get('hard', 0) > 0, f'no soft/hard entries at all: {dict(counts)}'
+assert count > 0, 'no usable gage rows at all'
 for w in warnings[:5]:
     print(f'WARN sheet {w}')
 if len(warnings) > 5:
     print(f'WARN sheet ... and {len(warnings) - 5} more (incomplete rows are fine while editing)')
-print(f\"OK   Google Sheet data (soft: {counts['soft']}, hard: {counts['hard']}, warnings: {len(warnings)})\")
+spread = ' '.join(f'{k}:{dist[k]}' for k in sorted(dist))
+print(f'OK   Google Sheet data ({count} gages, intensités {spread}, warnings: {len(warnings)})')
 "; then :; else
   echo "FAIL Google Sheet data (unreachable, not shared, or malformed)"
   FAIL=1

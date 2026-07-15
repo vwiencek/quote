@@ -58,10 +58,13 @@
     <div id="keywords" class="keywords" role="group" aria-label="Filtres"></div>
 
     <!-- Intensité -->
-    <div class="buttons">
-      <button id="btn-soft" class="lvl soft">Soft</button>
-      <button id="btn-surprise" class="lvl surprise" title="Soft ou hard, au hasard">Surprise</button>
-      <button id="btn-hard" class="lvl hard">Hard</button>
+    <div class="intensity-block">
+      <div class="slider-row">
+        <span class="slider-label">Intensité</span>
+        <input type="range" id="intensity" min="1" max="10" step="1" value="7" aria-label="Intensité du gage (1 à 10)">
+        <b id="intensity-val">7</b>
+      </div>
+      <button id="btn-go" title="Tirer un gage à cette intensité">GO</button>
     </div>
 
     <p id="note" role="status" aria-live="polite"></p>
