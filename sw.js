@@ -3,7 +3,7 @@
 // so deploys propagate immediately and the app still works offline.
 // The Google Sheet data is cross-origin and handled separately
 // (localStorage cache in index.html).
-const CACHE = "gage-v5";
+const CACHE = "gage-v6";
 const ASSETS = [
   "./",
   "./index.html",
@@ -11,6 +11,7 @@ const ASSETS = [
   "./app.js",
   "./assets/SF-cum.mp3",
   "./manifest.json",
+  "./assets/fonts/onest-latin.woff2",
   "./assets/icon-192.png",
   "./assets/icon-512.png",
   "./assets/icon-180.png",

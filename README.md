@@ -7,12 +7,12 @@
 0. **PIN lock**: the app opens on an access-code screen (numeric keypad) and no content is shown until the correct 4-digit code is entered. The code is `1310` (constant `ACCESS_PIN` at the top of `app.js`). Once unlocked, the app stays open for the rest of the browser session (`sessionStorage`); closing the tab re-locks it.
 1. You select the player at the top of the page (**♂ Lui / ♀ Elle**, remembered between visits); a line below shows whose turn it is. The **🔁 chacun son tour** toggle alternates the player automatically after each gage.
 2. Option toggles: **🙈 temps caché** (the countdown and ring are masked — you don't know when it will ring) and **🔊 son** (mute/unmute the end sound). All persisted.
-3. You optionally narrow the pool with the **keyword filter chips** (all enabled by default; click to toggle).
+3. You optionally narrow the pool with the **keyword filter chips** (all enabled by default; click to toggle). A **Tout / Rien** chip selects or clears them all at once.
 4. You pick a level: **Soft**, **Hard** — or **Surprise**, which picks one at random.
 4. The page answers with:
    - a random activity matching your level, filtered by player (entries marked `both` apply to everyone) and by the selected keywords
    - a random whole number of minutes drawn between that activity's `min` and `max`
-5. A **countdown timer** starts from that duration down to `0:00` inside a **progress ring** (green for soft, red for hard, green when done), so you can actually measure the time spent on the task. When it reaches zero the timer turns green, shows "Time's up!", plays a short sound — a segment of `SF-cum.mp3` defined by the `END_SOUND_START` / `END_SOUND_END` constants (in seconds) at the top of `app.js` — and vibrates on mobile. Next to the timer, **⏸** pauses/resumes the countdown and **+ 1 min** adds a minute (and restarts the countdown if time was already up). The **Terminé ✔** button below stops the timer early when the gage is done — same celebration (sound, vibration, green ring) — and the app waits for the next draw.
+5. A **countdown timer** starts from that duration down to `0:00` inside a **progress ring** (green for soft, red for hard, green when done), so you can actually measure the time spent on the task. When it reaches zero the timer turns green, shows "Time's up!", plays a short sound — a segment of `SF-cum.mp3` defined by the `END_SOUND_START` / `END_SOUND_END` constants (in seconds) at the top of `app.js` — and vibrates on mobile. Next to the timer, **⏸** pauses/resumes the countdown and **+ 1 min** adds a minute (and restarts the countdown if time was already up). The **🔀 Passer** button draws a different gage at the same level, and **Terminé ✔** stops the timer early when the gage is done — same celebration (sound, vibration, green ring) — and the app waits for the next draw. The countdown is **wall-clock based**, so it stays accurate even if the tab is backgrounded (where browsers throttle timers).
 
 Extra behavior:
 
@@ -20,8 +20,10 @@ Extra behavior:
 - **Screen stays awake** while the countdown runs (Screen Wake Lock API, where supported), so a phone doesn't lock mid-gage.
 - **Sheet cache (stale-while-revalidate)**: the last CSV is kept in localStorage (keyed by sheet ID) and rendered instantly on load, then the sheet is always re-fetched in the background — if it changed, data and keyword chips refresh in place (keeping your selection) with a "données mises à jour" note; if the network is down, the page runs on the cached copy and says so.
 - **Mis-tap protection**: while a timer runs, replacing the gage takes two clicks within 3 seconds.
-- **Session score**: completed gages are counted per player ("Score : Lui X — Elle Y" at the bottom, ↺ to reset; one point max per gage).
-- **Giant display**: tap the gage text to show it fullscreen (tap again to close).
+- **Session score**: completed gages are counted per player ("Score : Lui X — Elle Y" at the bottom, ↺ to reset; one point max per gage). It's kept in `sessionStorage`, so it resets when you close the tab.
+- **Giant display**: tap (or focus + Enter/Space) the gage text to show it fullscreen (tap, or Escape, to close). Focus returns to the gage on close.
+- **Accessible**: live regions announce the drawn gage, status and errors; the fullscreen view is keyboard-operable; visible keyboard focus throughout.
+- **No external dependencies**: the Onest font is self-hosted (`assets/fonts/`), so there are no requests to Google Fonts and typography works fully offline.
 - **PWA**: `manifest.json` + `sw.js` make the site installable on a phone's home screen (standalone, dice icon) and serve the app shell offline (network-first, cache fallback).
 
 Clicking a mode button again re-rolls the activity and restarts the timer.
@@ -52,6 +54,7 @@ The sheet must be shared as **"anyone with the link can view"** for the page to 
 | `app.js` | The logic |
 | `manifest.json` / `sw.js` | PWA install + offline app shell |
 | `assets/SF-cum.mp3` | Sound played when the timer ends |
+| `assets/fonts/onest-latin.woff2` | Self-hosted Onest variable font (latin subset) |
 | `assets/icon-*.png` | App icons (home screen / Apple touch) |
 | `serve.sh` | Start a local server to preview the site |
 | `test.sh` | Smoke-test the site locally |

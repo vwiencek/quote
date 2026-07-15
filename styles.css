@@ -1,3 +1,13 @@
+/* Self-hosted Onest (variable, latin subset) — works offline, no beacon
+   to Google Fonts. Covers French accents, œ, «», …, —, €. */
+@font-face {
+  font-family: 'Onest';
+  font-style: normal;
+  font-weight: 400 800;
+  font-display: swap;
+  src: url('assets/fonts/onest-latin.woff2') format('woff2');
+}
+
 :root {
   --bg: #0a0e18;
   --card: #111726;
@@ -141,6 +151,18 @@ body {
   border-color: var(--cat);
   color: var(--cat);
 }
+.kw-all {
+  flex: none;
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 0.44rem 0.8rem;
+  border-radius: 999px;
+  background: transparent;
+  border: 1.5px dashed var(--off-border);
+  color: var(--muted);
+  white-space: nowrap;
+}
+.kw-all:hover { filter: none; color: var(--text); border-color: var(--muted); }
 /* Fixed-width check so the chip never resizes when toggled */
 .kw::before {
   content: "";
@@ -194,6 +216,10 @@ button {
 button:hover { filter: brightness(1.15); }
 button:active { transform: scale(.97); }
 button:disabled { filter: grayscale(.5); opacity: .6; cursor: not-allowed; }
+/* Visible keyboard focus (mouse clicks stay clean via :focus-visible). */
+:focus-visible { outline: 2px solid var(--rose); outline-offset: 2px; }
+#item:focus-visible { outline-offset: 4px; border-radius: 8px; }
+#zoom:focus { outline: none; }
 .badge { display: none; } /* level is conveyed by the ring colour */
 #result {
   display: none;
@@ -276,6 +302,17 @@ button:disabled { filter: grayscale(.5); opacity: .6; cursor: not-allowed; }
 #btn-pause { font-size: 1.6rem; }
 #btn-plus { font-size: 0.875rem; font-weight: 600; white-space: nowrap; color: #c5cddd; }
 #btn-pause:hover, #btn-plus:hover { border-color: var(--muted); filter: none; }
+#btn-skip {
+  align-self: center;
+  padding: 0.6rem 1.4rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  border-radius: 12px;
+  background: transparent;
+  border: 1.5px solid var(--off-border);
+  color: var(--muted);
+}
+#btn-skip:hover { filter: none; color: var(--text); border-color: var(--muted); }
 #btn-finish {
   align-self: center;
   padding: 0.8rem 1.6rem;

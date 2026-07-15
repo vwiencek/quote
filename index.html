@@ -8,9 +8,6 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎲</text></svg>">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="assets/icon-180.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
 </head>
 <body class="locked">
@@ -21,7 +18,7 @@
       <div id="pin-dots" class="pin-dots" aria-hidden="true">
         <span></span><span></span><span></span><span></span>
       </div>
-      <p id="pin-error" class="pin-error">Code incorrect</p>
+      <p id="pin-error" class="pin-error" role="alert">Code incorrect</p>
       <div class="keypad" role="group" aria-label="Clavier">
         <button class="key" data-key="1">1</button>
         <button class="key" data-key="2">2</button>
@@ -67,13 +64,13 @@
       <button id="btn-hard" class="lvl hard">Hard</button>
     </div>
 
-    <p id="note"></p>
-    <p id="error"></p>
+    <p id="note" role="status" aria-live="polite"></p>
+    <p id="error" role="alert"></p>
 
     <!-- Gage tiré -->
     <div id="result">
       <span class="badge" id="badge"></span>
-      <div id="item"></div>
+      <div id="item" role="button" tabindex="0" aria-live="polite" aria-label="Gage — appuyer pour afficher en plein écran"></div>
       <div class="timer-row">
         <div class="ring-wrap" id="ring-wrap">
           <svg viewBox="0 0 220 220" aria-hidden="true">
@@ -87,8 +84,9 @@
           <button id="btn-plus" title="Ajouter une minute" aria-label="Ajouter une minute">+ 1 min</button>
         </div>
       </div>
+      <button id="btn-skip" title="Tirer un autre gage à la place">🔀 Passer</button>
       <button id="btn-finish" title="Le gage est fait — arrêter le minuteur">Terminé ✔</button>
-      <div id="status"></div>
+      <div id="status" role="status" aria-live="polite"></div>
     </div>
 
     <!-- Score -->
@@ -100,7 +98,7 @@
       <button id="btn-reset-score" title="Remettre le score à zéro">↺</button>
     </div>
   </div>
-  <div id="zoom" role="button" title="Réduire"></div>
+  <div id="zoom" role="button" tabindex="-1" aria-label="Gage en plein écran — appuyer ou Échap pour réduire" title="Réduire"></div>
 
 <script src="app.js"></script>
 </body>

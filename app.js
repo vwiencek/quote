@@ -82,10 +82,13 @@ let paused = false;
 let wakeLock = null;
 let drawn = new Set(JSON.parse(localStorage.getItem("drawnGages") || "[]"));
 let totalSeconds = 0;
+let endAt = 0; // wall-clock timestamp (ms) when the countdown reaches zero
 let alternate = localStorage.getItem("alternate") === "1";
 let hiddenTime = localStorage.getItem("hiddenTime") === "1";
 let muted = localStorage.getItem("muted") === "1";
-let score = JSON.parse(localStorage.getItem("score") || '{"homme":0,"femme":0}');
+// Score is per playing session (reset when the tab is closed), matching
+// the "score de session" intent — kept in sessionStorage.
+let score = JSON.parse(sessionStorage.getItem("score") || '{"homme":0,"femme":0}');
 let currentGagePlayer = null;
 let gageCounted = true;
 let hasPicked = false;
@@ -103,6 +106,7 @@ const btnHard = document.getElementById("btn-hard");
 const btnPlus = document.getElementById("btn-plus");
 const btnPause = document.getElementById("btn-pause");
 const btnFinish = document.getElementById("btn-finish");
+const btnSkip = document.getElementById("btn-skip");
 const btnHomme = document.getElementById("player-homme");
 const btnFemme = document.getElementById("player-femme");
 const keywordsEl = document.getElementById("keywords");
@@ -152,6 +156,7 @@ function splitKeywords(cellValue) {
 
 function csvToActivities(text) {
   const rows = parseCsv(text);
+  if (!rows.length || !rows[0]) return {}; // empty/malformed input -> invalid
   const headers = rows[0].map(h => h.trim().toLowerCase());
   const idx = {};
   headers.forEach((h, i) => { if (h && !(h in idx)) idx[h] = i; });
@@ -234,11 +239,18 @@ function cacheAge() {
 // always re-fetch the sheet; the network version wins when it differs.
 async function loadData() {
   const cached = localStorage.getItem(CACHE_KEY);
-  if (cached && applyData(cached)) {
-    console.info("Activities loaded from cache");
-  }
+  // A corrupt cache must not abort the load — swallow it and revalidate.
   try {
-    const res = await fetch(SHEET_CSV_URL);
+    if (cached && applyData(cached)) console.info("Activities loaded from cache");
+  } catch (e) {
+    console.warn("Ignoring unreadable cached data:", e);
+  }
+  // Abort a hung connection so the offline/error fallback still fires.
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 10000);
+  try {
+    const res = await fetch(SHEET_CSV_URL, { signal: controller.signal });
+    clearTimeout(timeout);
     if (!res.ok) throw new Error("HTTP " + res.status);
     const text = await res.text();
     if (text === cached) {
@@ -246,11 +258,16 @@ async function loadData() {
       return;
     }
     if (!applyData(text)) throw new Error("missing soft/hard entries");
-    localStorage.setItem(CACHE_KEY, text);
-    localStorage.setItem(CACHE_TIME_KEY, String(Date.now()));
+    try {
+      localStorage.setItem(CACHE_KEY, text);
+      localStorage.setItem(CACHE_TIME_KEY, String(Date.now()));
+    } catch (e) {
+      console.warn("Could not cache sheet (storage full?):", e);
+    }
     if (cached) showNote("Données mises à jour depuis la feuille Google.", true);
     console.info("Activities loaded from Google Sheet");
   } catch (err) {
+    clearTimeout(timeout);
     if (activities) {
       showNote("Feuille Google injoignable — utilisation des données en cache" + cacheAge() + ".");
       console.warn("Sheet unreachable (" + err.message + "), using cached data");
@@ -336,7 +353,10 @@ function releaseWakeLock() {
 }
 
 document.addEventListener("visibilitychange", () => {
-  if (document.visibilityState === "visible" && timerId) acquireWakeLock();
+  if (document.visibilityState === "visible" && timerId) {
+    acquireWakeLock();
+    tick(); // re-sync the display to real elapsed time after being hidden
+  }
 });
 
 function updateScoreDisplay() {
@@ -348,7 +368,7 @@ function countGageDone() {
   if (gageCounted || !currentGagePlayer) return;
   gageCounted = true;
   score[currentGagePlayer] = (score[currentGagePlayer] || 0) + 1;
-  localStorage.setItem("score", JSON.stringify(score));
+  sessionStorage.setItem("score", JSON.stringify(score));
   updateScoreDisplay();
 }
 
@@ -369,11 +389,15 @@ function celebrate(message) {
   countGageDone();
 }
 
+// Derive the remaining seconds from a wall-clock deadline rather than
+// counting ticks: background tabs throttle setInterval (and the wake lock
+// is dropped when hidden), so a tick-counting timer would run too slow.
 function tick() {
-  remaining--;
+  const msLeft = endAt - Date.now();
+  remaining = Math.max(0, Math.ceil(msLeft / 1000));
   renderCountdown();
   updateRing();
-  if (remaining <= 0) {
+  if (msLeft <= 0) {
     celebrate("Temps écoulé ! Bien joué 🎉");
   }
 }
@@ -387,7 +411,8 @@ function finishGage() {
 
 function startTimer() {
   clearInterval(timerId);
-  timerId = setInterval(tick, 1000);
+  endAt = Date.now() + remaining * 1000;
+  timerId = setInterval(tick, 500);
   paused = false;
   btnPause.textContent = "⏸";
   btnPause.disabled = false;
@@ -397,6 +422,8 @@ function startTimer() {
 
 function togglePause() {
   if (timerId) {
+    // Freeze the remaining seconds from the deadline before stopping.
+    remaining = Math.max(0, Math.ceil((endAt - Date.now()) / 1000));
     clearInterval(timerId);
     timerId = null;
     paused = true;
@@ -430,9 +457,19 @@ function renderKeywords() {
   }
   keywordUniverse = new Set(keywords);
   keywordsEl.innerHTML = "";
+  if (!keywords.length) return;
+  // "Tout / Rien": select all categories, or clear them all.
+  const allBtn = document.createElement("button");
+  allBtn.className = "kw-all";
+  allBtn.type = "button";
+  allBtn.textContent = "Tout / Rien";
+  allBtn.title = "Tout sélectionner ou tout désélectionner";
+  allBtn.addEventListener("click", () => setAllKeywords(selectedKeywords.size < keywords.length));
+  keywordsEl.appendChild(allBtn);
   for (const kw of keywords) {
     const btn = document.createElement("button");
     btn.className = "kw" + (selectedKeywords.has(kw) ? " active" : "");
+    btn.dataset.kw = kw;
     btn.textContent = kw;
     btn.setAttribute("aria-pressed", String(selectedKeywords.has(kw)));
     btn.addEventListener("click", () => {
@@ -443,6 +480,16 @@ function renderKeywords() {
     });
     keywordsEl.appendChild(btn);
   }
+}
+
+// Select or clear every category chip at once (used by "Tout / Rien").
+function setAllKeywords(on) {
+  selectedKeywords = on ? new Set(keywordUniverse) : new Set();
+  keywordsEl.querySelectorAll(".kw").forEach(btn => {
+    const active = selectedKeywords.has(btn.dataset.kw);
+    btn.classList.toggle("active", active);
+    btn.setAttribute("aria-pressed", String(active));
+  });
 }
 
 function setPlayer(p) {
@@ -553,12 +600,16 @@ function addMinute() {
   totalSeconds += 60;
   countdownEl.classList.remove("done");
   ringWrap.classList.remove("done");
-  renderCountdown();
-  updateRing();
-  if (!timerId && !paused) {
+  if (timerId) {
+    endAt += 60000; // extend the running deadline
+  } else if (!paused) {
+    // The gage had ended — revive it.
     statusEl.textContent = "Encore une minute — c'est parti !";
     startTimer();
+    return;
   }
+  renderCountdown();
+  updateRing();
 }
 
 // Small option toggles ------------------------------------------------
@@ -608,15 +659,27 @@ function openZoom() {
   if (!itemEl.textContent) return;
   zoomEl.textContent = itemEl.textContent;
   zoomEl.classList.add("visible");
+  zoomEl.focus();
 }
 
 function closeZoom() {
+  if (!zoomEl.classList.contains("visible")) return;
   zoomEl.classList.remove("visible");
+  itemEl.focus(); // return focus to the trigger
+}
+
+// "Passer": draw a different gage at the same level without tripping the
+// two-click replace guard.
+function reroll() {
+  if (!resultEl.classList.contains("visible") || !selectedLevel) return;
+  replaceArmed = true;
+  if (selectedLevel === "surprise") surprise();
+  else pick(selectedLevel);
 }
 
 function resetScore() {
   score = { homme: 0, femme: 0 };
-  localStorage.setItem("score", JSON.stringify(score));
+  sessionStorage.setItem("score", JSON.stringify(score));
   updateScoreDisplay();
 }
 
@@ -626,10 +689,17 @@ btnSurprise.addEventListener("click", () => { paintLevel("surprise"); surprise()
 btnPlus.addEventListener("click", addMinute);
 btnPause.addEventListener("click", togglePause);
 btnFinish.addEventListener("click", finishGage);
+btnSkip.addEventListener("click", reroll);
 btnHomme.addEventListener("click", () => setPlayer("homme"));
 btnFemme.addEventListener("click", () => setPlayer("femme"));
 itemEl.addEventListener("click", openZoom);
+itemEl.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openZoom(); }
+});
 zoomEl.addEventListener("click", closeZoom);
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") closeZoom();
+});
 btnResetScore.addEventListener("click", resetScore);
 
 setPlayer(player);
