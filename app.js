@@ -421,6 +421,7 @@ function finishGage() {
 
 function startTimer() {
   clearInterval(timerId);
+  ringWrap.classList.remove("ready");
   endAt = Date.now() + remaining * 1000;
   timerId = setInterval(tick, 500);
   paused = false;
@@ -440,8 +441,9 @@ function togglePause() {
     btnPause.textContent = "▶";
     statusEl.textContent = "En pause";
     releaseWakeLock();
-  } else if (paused && remaining > 0) {
-    statusEl.textContent = "C'est reparti !";
+  } else if (remaining > 0 && !ringWrap.classList.contains("done")) {
+    // Idle (fresh draw) -> start; paused -> resume.
+    statusEl.textContent = paused ? "C'est reparti !" : "C'est parti !";
     startTimer();
   }
 }
@@ -600,32 +602,37 @@ function pick(key) {
   badge.className = "badge " + key;
   itemEl.textContent = gage.text;
   countdownEl.classList.remove("done");
-  ringWrap.className = "ring-wrap" + (key === "hard" ? " hard" : "");
+  // Draw in a stopped "ready" state — the timer starts on the user's tap.
+  clearInterval(timerId);
+  timerId = null;
+  paused = false;
+  ringWrap.className = "ring-wrap ready" + (key === "hard" ? " hard" : "");
+  btnPause.textContent = "▶";
+  btnPause.disabled = false;
+  btnFinish.disabled = false;
   renderCountdown();
   updateRing();
-  statusEl.textContent = (hiddenTime
-    ? "Durée surprise — c'est parti !"
-    : minutes + " minute" + (minutes > 1 ? "s" : "") + " — c'est parti !") +
-    (newRound ? " (tous les gages ont été tirés, nouvelle tournée)" : "");
+  statusEl.textContent = "Appuie sur le minuteur pour démarrer" +
+    (newRound ? " (nouvelle tournée)" : "");
   resultEl.classList.add("visible");
-
-  startTimer();
 }
 
 function addMinute() {
   if (!resultEl.classList.contains("visible")) return;
+  const wasDone = ringWrap.classList.contains("done");
   remaining += 60;
   totalSeconds += 60;
   countdownEl.classList.remove("done");
   ringWrap.classList.remove("done");
   if (timerId) {
     endAt += 60000; // extend the running deadline
-  } else if (!paused) {
-    // The gage had ended — revive it.
+  } else if (wasDone) {
+    // The gage had ended — revive and start it.
     statusEl.textContent = "Encore une minute — c'est parti !";
     startTimer();
     return;
   }
+  // Idle or paused: just add the minute, stay stopped.
   renderCountdown();
   updateRing();
 }
@@ -812,6 +819,7 @@ btnHard.addEventListener("click", () => { paintLevel("hard"); pick("hard"); });
 btnSurprise.addEventListener("click", () => { paintLevel("surprise"); surprise(); });
 btnPlus.addEventListener("click", addMinute);
 btnPause.addEventListener("click", togglePause);
+ringWrap.addEventListener("click", togglePause); // tap the ring to start / pause / resume
 btnFinish.addEventListener("click", finishGage);
 btnSkip.addEventListener("click", reroll);
 btnSpeak.addEventListener("click", speakGage);

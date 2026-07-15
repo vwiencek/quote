@@ -262,6 +262,17 @@ button:disabled { filter: grayscale(.5); opacity: .6; cursor: not-allowed; }
   width: 11.875rem;
   height: 11.875rem;
   flex: none;
+  cursor: pointer; /* tap to start / pause / resume */
+}
+.ring-wrap.done { cursor: default; }
+/* "Ready" = drawn but not started yet: gently pulse to invite a tap. */
+.ring-wrap.ready .ring-fg { animation: ring-pulse 1.6s ease-in-out infinite; }
+@keyframes ring-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ring-wrap.ready .ring-fg { animation: none; }
 }
 .ring-wrap svg {
   position: absolute;
