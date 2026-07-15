@@ -547,8 +547,9 @@ function pick(key) {
     return;
   }
   replaceArmed = false;
-  // "Chacun son tour": switch player automatically for each new gage.
-  const p = (alternate && hasPicked)
+  // "On alterne": switch player automatically for each new gage — but not
+  // on a "Passer" re-roll, which stays on the current player.
+  const p = (alternate && hasPicked && !rerolling)
     ? (player === "homme" ? "femme" : "homme")
     : player;
   const list = (activities[key] || []).filter(g =>
@@ -675,12 +676,16 @@ function closeZoom() {
 }
 
 // "Passer": draw a different gage at the same level without tripping the
-// two-click replace guard.
+// two-click replace guard, and WITHOUT switching player — it's a re-roll
+// of the current turn, not a new one.
+let rerolling = false;
 function reroll() {
   if (!resultEl.classList.contains("visible") || !selectedLevel) return;
   replaceArmed = true;
+  rerolling = true;
   if (selectedLevel === "surprise") surprise();
   else pick(selectedLevel);
+  rerolling = false;
 }
 
 function resetScore() {

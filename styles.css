@@ -302,23 +302,28 @@ button:disabled { filter: grayscale(.5); opacity: .6; cursor: not-allowed; }
 #btn-pause { font-size: 1.6rem; }
 #btn-plus { font-size: 0.875rem; font-weight: 600; white-space: nowrap; color: #c5cddd; }
 #btn-pause:hover, #btn-plus:hover { border-color: var(--muted); filter: none; }
-#btn-skip {
-  align-self: center;
-  padding: 0.6rem 1.4rem;
-  font-size: 0.9rem;
-  font-weight: 600;
+.action-row {
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  gap: 0.75rem;
+}
+#btn-skip, #btn-finish {
+  flex: none;
+  padding: 0.75rem 1.5rem;
+  font-size: 0.95rem;
   border-radius: 12px;
+  border: 1.5px solid transparent; /* same box so heights match exactly */
+}
+#btn-skip {
+  font-weight: 600;
   background: transparent;
-  border: 1.5px solid var(--off-border);
+  border-color: var(--off-border);
   color: var(--muted);
 }
 #btn-skip:hover { filter: none; color: var(--text); border-color: var(--muted); }
 #btn-finish {
-  align-self: center;
-  padding: 0.8rem 1.6rem;
-  font-size: 0.95rem;
   font-weight: 700;
-  border-radius: 12px;
   background: var(--rose);
   color: #fff;
   box-shadow: 0 8px 22px rgba(239, 90, 120, 0.32);
