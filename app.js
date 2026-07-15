@@ -119,6 +119,7 @@ const btnSound = document.getElementById("btn-sound");
 const scoreHommeEl = document.getElementById("score-homme");
 const scoreFemmeEl = document.getElementById("score-femme");
 const btnResetScore = document.getElementById("btn-reset-score");
+const totalGagesEl = document.getElementById("total-gages");
 const zoomEl = document.getElementById("zoom");
 const ringEl = document.getElementById("ring");
 const ringWrap = document.getElementById("ring-wrap");
@@ -225,7 +226,15 @@ function applyData(text) {
   if (!isValid(data)) return false;
   activities = data;
   renderKeywords();
+  updateTotalGages();
   return true;
+}
+
+// Total number of gages loaded from the sheet (all levels combined).
+function updateTotalGages() {
+  let n = 0;
+  for (const k of Object.keys(activities)) n += activities[k].length;
+  totalGagesEl.textContent = n + " gage" + (n > 1 ? "s" : "") + " au total";
 }
 
 function cacheAge() {

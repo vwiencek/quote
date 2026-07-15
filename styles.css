@@ -374,6 +374,13 @@ button:disabled { filter: grayscale(.5); opacity: .6; cursor: not-allowed; }
   color: var(--muted);
 }
 #btn-reset-score:hover { filter: none; color: var(--text); }
+#total-gages {
+  text-align: center;
+  font-size: 0.72rem;
+  color: var(--muted);
+  opacity: 0.7;
+  letter-spacing: 0.02em;
+}
 
 /* Fullscreen gage -------------------------------------------------- */
 #zoom {
