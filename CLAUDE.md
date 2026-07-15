@@ -10,7 +10,7 @@ Contexte pour Claude Code (et tout humain qui débarque). Résume ce qui a été
 
 - **Site 100 % statique, sans build** : `index.html` (markup), `styles.css`, `app.js` (logique), `sw.js`, `manifest.json`. Les binaires (mp3 de fin, icônes PNG) sont dans `assets/`. Pas de framework, pas de dépendance.
 - **Données** : Google Sheet partagée « anyone with link can view », lue en CSV côté client via l'endpoint gviz (`/gviz/tq?tqx=out:csv`). L'ID de la feuille est la constante `SHEET_ID` en haut du script d'`index.html`.
-- **Colonnes de la feuille** : `gage` (texte), `player` (`homme`/`femme`/`both`), `min`/`max` (bornes de durée en minutes), `keyword` (tag de filtre), `level` (`soft`/`hard` ; l'ancien en-tête `type` est accepté). Lignes incomplètes tolérées : sans `level` → ignorées ; `player` vide → `both` ; `min`/`max` vides → 1–10 ; `keyword` vide → toujours inclus.
+- **Colonnes de la feuille** : `gage` (texte), `player` (`homme`/`femme`/`both`), `min`/`max` (bornes de durée en minutes), `keyword` (un ou plusieurs tags de filtre séparés par des virgules, ex. `soft, romantic`), `level` (`soft`/`hard` ; l'ancien en-tête `type` est accepté). Lignes incomplètes tolérées : sans `level` → ignorées ; `player` vide → `both` ; `min`/`max` vides → 1–10 ; `keyword` vide → toujours inclus. Un gage est tiré si **au moins un** de ses tags est sélectionné.
 - **Déploiement** : chaque push sur `main` déploie sur Azure Static Web Apps (workflow dans `.github/workflows/`, `skip_app_build: true` car site statique — Oryx échouait sinon).
 
 ## Fonctionnalités (état actuel)

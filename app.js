@@ -54,7 +54,8 @@ const ACCESS_PIN = "1310";
 
 // Data comes from a Google Sheet shared as "anyone with the link can view".
 // Row-based format: columns "gage" (text), "player" (homme/femme/both),
-// "min" / "max" (duration bounds in minutes), "keyword" (filter tag),
+// "min" / "max" (duration bounds in minutes), "keyword" (one or more
+// filter tags, comma-separated),
 // "weight" (optional draw weight, default 1) and "level" (soft/hard;
 // the legacy "type" header is also accepted).
 // A column-based layout (one soft column, one hard column) is still
@@ -140,6 +141,17 @@ function parseCsv(text) {
   return rows;
 }
 
+// The "keyword" cell may hold several comma-separated tags. Return them
+// as a deduped list of lowercase, trimmed, non-empty keywords.
+function splitKeywords(cellValue) {
+  const out = [];
+  for (const kw of (cellValue || "").split(",")) {
+    const k = kw.trim().toLowerCase();
+    if (k && !out.includes(k)) out.push(k);
+  }
+  return out;
+}
+
 function csvToActivities(text) {
   const rows = parseCsv(text);
   const headers = rows[0].map(h => h.trim().toLowerCase());
@@ -164,7 +176,7 @@ function csvToActivities(text) {
         player: cell(r, idx.player).toLowerCase() || "both",
         min: parseInt(cell(r, idx.min), 10),
         max: parseInt(cell(r, idx.max), 10),
-        keyword: cell(r, idx.keyword).toLowerCase(),
+        keywords: splitKeywords(cell(r, idx.keyword)),
         weight: Number.isFinite(weight) && weight > 0 ? weight : 1,
       });
     }
@@ -175,7 +187,7 @@ function csvToActivities(text) {
       r.forEach((value, i) => {
         const key = headers[i];
         if (key && value && value.trim()) {
-          data[key].push({ text: value.trim(), player: "both", min: NaN, max: NaN, keyword: "", weight: 1 });
+          data[key].push({ text: value.trim(), player: "both", min: NaN, max: NaN, keywords: [], weight: 1 });
         }
       });
     }
@@ -394,7 +406,9 @@ function renderKeywords() {
   const keywords = [];
   for (const key of Object.keys(activities)) {
     for (const g of activities[key]) {
-      if (g.keyword && !keywords.includes(g.keyword)) keywords.push(g.keyword);
+      for (const kw of g.keywords) {
+        if (!keywords.includes(kw)) keywords.push(kw);
+      }
     }
   }
   if (keywordUniverse) {
@@ -460,7 +474,7 @@ function pick(key) {
     : player;
   const list = (activities[key] || []).filter(g =>
     (g.player === "both" || g.player === p) &&
-    (!g.keyword || selectedKeywords.has(g.keyword)));
+    (!g.keywords.length || g.keywords.some(kw => selectedKeywords.has(kw))));
   if (!list.length) {
     errorEl.textContent = "Aucun gage ne correspond à cette sélection.";
     errorEl.style.display = "block";

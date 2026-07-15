@@ -35,7 +35,7 @@ Activities are loaded at page load from a **Google Sheet** ([open](https://docs.
 | `gage` | The activity text |
 | `player` | Who it applies to: `homme`, `femme`, or `both` |
 | `min` / `max` | Duration bounds in minutes (a whole number is drawn in this range) |
-| `keyword` | Filter tag — the unique values become the filter chips on the page |
+| `keyword` | Filter tag(s) — one or several, comma-separated (e.g. `soft, romantic`). Each distinct tag becomes a filter chip; a gage is drawn when **any** of its tags is selected |
 | `weight` | Optional draw weight (default 1) — higher = drawn more often |
 | `level` | `soft` or `hard` (the legacy `type` header is also accepted) |
 
