@@ -691,13 +691,39 @@ function stopSpeaking() {
   setSpeakState(false);
 }
 
+// Pick the most natural-sounding French voice available: enhanced / neural
+// voices and the Google/Apple named ones beat the default "compact" voice
+// that sounds robotic.
+function pickFrenchVoice() {
+  let fr = speechSynthesis.getVoices().filter(v => (v.lang || "").toLowerCase().startsWith("fr"));
+  if (!fr.length) return null;
+  // Offline, network voices (Google / MS online) won't play — keep local ones.
+  if (!navigator.onLine) {
+    const local = fr.filter(v => v.localService);
+    if (local.length) fr = local;
+  }
+  const rank = (v) => {
+    const n = (v.name + " " + (v.voiceURI || "")).toLowerCase();
+    let s = 0;
+    if (/natural|neural|enhanced|premium|siri/.test(n)) s += 100; // high-quality
+    if (/google/.test(n)) s += 60;                                // Google FR is smooth
+    if (/amélie|amelie|aurélie|aurelie|thomas|marie|virginie|audrey/.test(n)) s += 25;
+    if (v.localService === false) s += 8;                         // network voices tend to be richer
+    if ((v.lang || "").toLowerCase() === "fr-fr") s += 4;
+    return s;
+  };
+  return fr.slice().sort((a, b) => rank(b) - rank(a))[0];
+}
+
 function speakGage() {
   if (!canSpeak || !itemEl.textContent) return;
   if (speechSynthesis.speaking) { stopSpeaking(); return; }
   const u = new SpeechSynthesisUtterance(itemEl.textContent);
   u.lang = "fr-FR";
-  const fr = speechSynthesis.getVoices().find(v => (v.lang || "").toLowerCase().startsWith("fr"));
-  if (fr) u.voice = fr;
+  const voice = pickFrenchVoice();
+  if (voice) u.voice = voice;
+  u.rate = 0.98;  // a touch slower reads more naturally
+  u.pitch = 1;
   u.onend = () => setSpeakState(false);
   u.onerror = () => setSpeakState(false);
   setSpeakState(true);
@@ -749,6 +775,12 @@ paintHidden(hiddenTime);
 paintSound(!muted);
 btnSound.textContent = muted ? "🔇 son" : "🔊 son";
 if (!canSpeak) btnSpeak.style.display = "none"; // no speech synthesis support
+// Voices load asynchronously on some browsers — warm the list so the best
+// French voice is ready by the first press.
+if (canSpeak) {
+  speechSynthesis.getVoices();
+  speechSynthesis.addEventListener("voiceschanged", () => speechSynthesis.getVoices());
+}
 updateScoreDisplay();
 loadData();
 
