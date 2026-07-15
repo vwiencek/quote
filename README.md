@@ -21,6 +21,7 @@ Extra behavior:
 - **Sheet cache (stale-while-revalidate)**: the last CSV is kept in localStorage (keyed by sheet ID) and rendered instantly on load, then the sheet is always re-fetched in the background — if it changed, data and keyword chips refresh in place (keeping your selection) with a "données mises à jour" note; if the network is down, the page runs on the cached copy and says so.
 - **Mis-tap protection**: while a timer runs, replacing the gage takes two clicks within 3 seconds.
 - **Session score**: completed gages are counted per player ("Score : Lui X — Elle Y" at the bottom, ↺ to reset; one point max per gage). It's kept in `sessionStorage`, so it resets when you close the tab.
+- **Read aloud**: a **🔈 Lire le gage** button reads the current gage out loud (browser speech synthesis, French voice when available; click again to stop). Hidden if the browser has no speech support. No external service.
 - **Giant display**: tap (or focus + Enter/Space) the gage text to show it fullscreen (tap, or Escape, to close). Focus returns to the gage on close.
 - **Accessible**: live regions announce the drawn gage, status and errors; the fullscreen view is keyboard-operable; visible keyboard focus throughout.
 - **No external dependencies**: the Onest font is self-hosted (`assets/fonts/`), so there are no requests to Google Fonts and typography works fully offline.

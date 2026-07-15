@@ -107,6 +107,7 @@ const btnPlus = document.getElementById("btn-plus");
 const btnPause = document.getElementById("btn-pause");
 const btnFinish = document.getElementById("btn-finish");
 const btnSkip = document.getElementById("btn-skip");
+const btnSpeak = document.getElementById("btn-speak");
 const btnHomme = document.getElementById("player-homme");
 const btnFemme = document.getElementById("player-femme");
 const keywordsEl = document.getElementById("keywords");
@@ -585,6 +586,7 @@ function pick(key) {
   currentGagePlayer = p;
   gageCounted = false;
 
+  stopSpeaking(); // a new gage is showing — cancel any ongoing read
   badge.textContent = key;
   badge.className = "badge " + key;
   itemEl.textContent = gage.text;
@@ -675,6 +677,33 @@ function closeZoom() {
   itemEl.focus(); // return focus to the trigger
 }
 
+// Read the gage aloud with the browser's speech synthesis (French voice
+// if one is available). Toggles: pressing again stops. No external service.
+const canSpeak = "speechSynthesis" in window && typeof SpeechSynthesisUtterance !== "undefined";
+
+function setSpeakState(speaking) {
+  btnSpeak.textContent = speaking ? "⏹ Stop" : "🔈 Lire le gage";
+  btnSpeak.classList.toggle("speaking", speaking);
+}
+
+function stopSpeaking() {
+  if (canSpeak) speechSynthesis.cancel();
+  setSpeakState(false);
+}
+
+function speakGage() {
+  if (!canSpeak || !itemEl.textContent) return;
+  if (speechSynthesis.speaking) { stopSpeaking(); return; }
+  const u = new SpeechSynthesisUtterance(itemEl.textContent);
+  u.lang = "fr-FR";
+  const fr = speechSynthesis.getVoices().find(v => (v.lang || "").toLowerCase().startsWith("fr"));
+  if (fr) u.voice = fr;
+  u.onend = () => setSpeakState(false);
+  u.onerror = () => setSpeakState(false);
+  setSpeakState(true);
+  speechSynthesis.speak(u);
+}
+
 // "Passer": draw a different gage at the same level without tripping the
 // two-click replace guard, and WITHOUT switching player — it's a re-roll
 // of the current turn, not a new one.
@@ -701,6 +730,7 @@ btnPlus.addEventListener("click", addMinute);
 btnPause.addEventListener("click", togglePause);
 btnFinish.addEventListener("click", finishGage);
 btnSkip.addEventListener("click", reroll);
+btnSpeak.addEventListener("click", speakGage);
 btnHomme.addEventListener("click", () => setPlayer("homme"));
 btnFemme.addEventListener("click", () => setPlayer("femme"));
 itemEl.addEventListener("click", openZoom);
@@ -718,6 +748,7 @@ paintAlternate(alternate);
 paintHidden(hiddenTime);
 paintSound(!muted);
 btnSound.textContent = muted ? "🔇 son" : "🔊 son";
+if (!canSpeak) btnSpeak.style.display = "none"; // no speech synthesis support
 updateScoreDisplay();
 loadData();
 
