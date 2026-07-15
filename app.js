@@ -117,7 +117,8 @@ const btnResetScore = document.getElementById("btn-reset-score");
 const zoomEl = document.getElementById("zoom");
 const ringEl = document.getElementById("ring");
 const ringWrap = document.getElementById("ring-wrap");
-const RING_CIRC = 2 * Math.PI * 54;
+const turnLabelEl = document.getElementById("turn-label");
+const RING_CIRC = 2 * Math.PI * 95;
 
 function parseCsv(text) {
   const rows = [];
@@ -443,6 +444,23 @@ function setPlayer(p) {
   btnFemme.classList.toggle("active", p === "femme");
   btnHomme.setAttribute("aria-pressed", String(p === "homme"));
   btnFemme.setAttribute("aria-pressed", String(p === "femme"));
+  updateTurnLabel();
+}
+
+// "Au tour de …" when alternating, "Gage pour …" otherwise.
+function updateTurnLabel() {
+  const who = player === "homme" ? "Lui" : "Elle";
+  turnLabelEl.textContent = (alternate ? "Au tour de : " : "Gage pour : ") + who;
+}
+
+// Highlight the intensity button that was last pressed (soft / surprise /
+// hard); the resulting soft/hard draw still drives the ring colour.
+let selectedLevel = null;
+function paintLevel(key) {
+  selectedLevel = key;
+  btnSoft.classList.toggle("active", key === "soft");
+  btnSurprise.classList.toggle("active", key === "surprise");
+  btnHard.classList.toggle("active", key === "hard");
 }
 
 function weightedPick(list) {
@@ -549,6 +567,7 @@ const paintAlternate = bindToggle(btnAlternate, "alternate", (on) => {
   alternate = on;
   localStorage.setItem("alternate", on ? "1" : "0");
   paintAlternate(on);
+  updateTurnLabel();
 });
 
 const paintHidden = bindToggle(btnHidden, "hiddenTime", (on) => {
@@ -593,9 +612,9 @@ function resetScore() {
   updateScoreDisplay();
 }
 
-btnSoft.addEventListener("click", () => pick("soft"));
-btnHard.addEventListener("click", () => pick("hard"));
-btnSurprise.addEventListener("click", surprise);
+btnSoft.addEventListener("click", () => { paintLevel("soft"); pick("soft"); });
+btnHard.addEventListener("click", () => { paintLevel("hard"); pick("hard"); });
+btnSurprise.addEventListener("click", () => { paintLevel("surprise"); surprise(); });
 btnPlus.addEventListener("click", addMinute);
 btnPause.addEventListener("click", togglePause);
 btnFinish.addEventListener("click", finishGage);

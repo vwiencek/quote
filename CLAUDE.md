@@ -8,7 +8,7 @@ Contexte pour Claude Code (et tout humain qui débarque). Résume ce qui a été
 
 ## Architecture
 
-- **Site 100 % statique, sans build** : `index.html` (markup), `styles.css`, `app.js` (logique), `sw.js`, `manifest.json`. Les binaires (mp3 de fin, icônes PNG) sont dans `assets/`. Pas de framework, pas de dépendance.
+- **Site 100 % statique, sans build** : `index.html` (markup), `styles.css`, `app.js` (logique), `sw.js`, `manifest.json`. Les binaires (mp3 de fin, icônes PNG) sont dans `assets/`. Pas de framework ni de build ; seule dépendance externe = la police **Onest** chargée depuis Google Fonts (repli système si hors-ligne).
 - **Données** : Google Sheet partagée « anyone with link can view », lue en CSV côté client via l'endpoint gviz (`/gviz/tq?tqx=out:csv`). L'ID de la feuille est la constante `SHEET_ID` en haut du script d'`index.html`.
 - **Colonnes de la feuille** : `gage` (texte), `player` (`homme`/`femme`/`both`), `min`/`max` (bornes de durée en minutes), `keyword` (un ou plusieurs tags de filtre séparés par des virgules, ex. `soft, romantic`), `level` (`soft`/`hard` ; l'ancien en-tête `type` est accepté). Lignes incomplètes tolérées : sans `level` → ignorées ; `player` vide → `both` ; `min`/`max` vides → 1–10 ; `keyword` vide → toujours inclus. Un gage est tiré si **au moins un** de ses tags est sélectionné.
 - **Déploiement** : chaque push sur `main` déploie sur Azure Static Web Apps (workflow dans `.github/workflows/`, `skip_app_build: true` car site statique — Oryx échouait sinon).
@@ -28,7 +28,7 @@ Contexte pour Claude Code (et tout humain qui débarque). Résume ce qui a été
 - Protection anti-fausse-manip : remplacer un gage en cours = 2 clics en 3 s.
 - Options persistées : 🙈 temps caché (compte à rebours et anneau masqués), 🔊/🔇 son.
 - Score de session par joueur (« Lui / Elle », 1 point max par gage terminé, ↺ pour reset), colonne `weight` optionnelle (pondération des tirages), tap sur le gage = affichage plein écran.
-- Couleurs : soft orange, hard rouge sang (`--soft`/`--hard`) ; logos ♂ bleu / ♀ rose (`--man`/`--woman`, SVG inline — pas de glyphes Unicode, Firefox les rendait en emoji).
+- **Design (refonte 2026-07-15)** : palette sombre bleu-nuit (`--bg #0a0e18`, carte `--card #111726`, fond en dégradé radial), police **Onest** (Google Fonts, repli système hors-ligne). Accent principal **rose** `--rose #ef5a78` (joueur actif, bouton Terminé, libellé de tour, chiffres du score). Toggles = pastilles rose quand actives ; chips de catégories = **cyan** `--cat`. Boutons d'intensité tricolores : Soft **vert** `--soft`, Surprise **or** `--surprise`, Hard **rouge** `--hard` (contour au repos, plein + ombre quand c'est le dernier tiré). Anneau : vert (soft) / rouge (hard) / vert (fini). Joueur affiché en texte « ♂ Lui / ♀ Elle » (glyphes forcés en présentation texte via `&#65038;` — évite le rendu emoji de Firefox). Le badge SOFT/HARD est masqué (l'anneau porte l'info). Libellé de tour sous le sélecteur : « Au tour de … » (si chacun son tour) ou « Gage pour … ».
 
 ## Scripts
 

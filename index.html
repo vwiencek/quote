@@ -3,11 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="theme-color" content="#0f172a">
+<meta name="theme-color" content="#0a0e18">
 <title>Donne-moi un gage</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎲</text></svg>">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="assets/icon-180.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
 </head>
 <body class="locked">
@@ -37,46 +40,45 @@
   </div>
 
   <div class="card">
-    <div class="player-row">
-      <span class="player-label">Donne un gage à ...</span>
-      <div class="player-controls">
+    <!-- Header + joueur -->
+    <div class="header">
+      <div class="eyebrow">Donne un gage à…</div>
       <div class="player-toggle" role="group" aria-label="Joueur">
-        <button id="player-homme" class="ptoggle" aria-pressed="false" aria-label="un homme" title="un homme">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <circle cx="9.5" cy="14.5" r="6"/>
-            <path d="M14 10 L21 3 M15.5 3 H21 V8.5"/>
-          </svg>
-        </button>
-        <button id="player-femme" class="ptoggle" aria-pressed="false" aria-label="une femme" title="une femme">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
-            <circle cx="12" cy="8.5" r="6"/>
-            <path d="M12 14.5 V22 M8.5 18.5 H15.5"/>
-          </svg>
-        </button>
+        <button id="player-homme" class="ptoggle" aria-pressed="false" aria-label="Lui">&#9794;&#65038;&nbsp;Lui</button>
+        <button id="player-femme" class="ptoggle" aria-pressed="false" aria-label="Elle">&#9792;&#65038;&nbsp;Elle</button>
       </div>
-      <button id="btn-alternate" class="alt-toggle" aria-pressed="false" title="Alterner automatiquement le joueur à chaque gage">🔁 chacun son tour</button>
-      </div>
+      <div id="turn-label" class="turn-label"></div>
     </div>
+
+    <!-- Options -->
     <div class="options" role="group" aria-label="Options">
+      <button id="btn-alternate" class="opt" aria-pressed="false" title="Alterner automatiquement le joueur à chaque gage">🔁 chacun son tour</button>
       <button id="btn-hidden" class="opt" aria-pressed="false" title="Masquer le temps restant">🙈 temps caché</button>
       <button id="btn-sound" class="opt" aria-pressed="true" title="Activer ou couper le son">🔊 son</button>
     </div>
+
+    <!-- Catégories -->
     <div id="keywords" class="keywords" role="group" aria-label="Filtres"></div>
+
+    <!-- Intensité -->
     <div class="buttons">
-      <button id="btn-soft">Soft</button>
-      <button id="btn-surprise" title="Soft ou hard, au hasard">Surprise</button>
-      <button id="btn-hard">Hard</button>
+      <button id="btn-soft" class="lvl soft">Soft</button>
+      <button id="btn-surprise" class="lvl surprise" title="Soft ou hard, au hasard">Surprise</button>
+      <button id="btn-hard" class="lvl hard">Hard</button>
     </div>
-    <p id="error"></p>
+
     <p id="note"></p>
+    <p id="error"></p>
+
+    <!-- Gage tiré -->
     <div id="result">
       <span class="badge" id="badge"></span>
       <div id="item"></div>
       <div class="timer-row">
         <div class="ring-wrap" id="ring-wrap">
-          <svg viewBox="0 0 120 120" aria-hidden="true">
-            <circle class="ring-bg" cx="60" cy="60" r="54"/>
-            <circle class="ring-fg" id="ring" cx="60" cy="60" r="54"/>
+          <svg viewBox="0 0 220 220" aria-hidden="true">
+            <circle class="ring-bg" cx="110" cy="110" r="95"/>
+            <circle class="ring-fg" id="ring" cx="110" cy="110" r="95"/>
           </svg>
           <div id="countdown"></div>
         </div>
@@ -88,8 +90,11 @@
       <button id="btn-finish" title="Le gage est fait — arrêter le minuteur">Terminé ✔</button>
       <div id="status"></div>
     </div>
+
+    <!-- Score -->
     <div id="score-row">
-      Score&nbsp;: <span class="score-man">Lui <b id="score-homme">0</b></span>
+      <span class="score-label">Score :</span>
+      <span class="score-man">Lui <b id="score-homme">0</b></span>
       <span class="score-sep">—</span>
       <span class="score-woman">Elle <b id="score-femme">0</b></span>
       <button id="btn-reset-score" title="Remettre le score à zéro">↺</button>

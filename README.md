@@ -5,14 +5,14 @@
 ## What the site does
 
 0. **PIN lock**: the app opens on an access-code screen (numeric keypad) and no content is shown until the correct 4-digit code is entered. The code is `1310` (constant `ACCESS_PIN` at the top of `app.js`). Once unlocked, the app stays open for the rest of the browser session (`sessionStorage`); closing the tab re-locks it.
-1. You select the player at the top of the page (♂ / ♀ icons, remembered between visits). The **🔁 chacun son tour** toggle alternates the player automatically after each gage.
+1. You select the player at the top of the page (**♂ Lui / ♀ Elle**, remembered between visits); a line below shows whose turn it is. The **🔁 chacun son tour** toggle alternates the player automatically after each gage.
 2. Option toggles: **🙈 temps caché** (the countdown and ring are masked — you don't know when it will ring) and **🔊 son** (mute/unmute the end sound). All persisted.
 3. You optionally narrow the pool with the **keyword filter chips** (all enabled by default; click to toggle).
 4. You pick a level: **Soft**, **Hard** — or **Surprise**, which picks one at random.
 4. The page answers with:
    - a random activity matching your level, filtered by player (entries marked `both` apply to everyone) and by the selected keywords
    - a random whole number of minutes drawn between that activity's `min` and `max`
-5. A **countdown timer** starts from that duration down to `0:00` inside a **progress ring** (blue for soft, pink for hard, green when done), so you can actually measure the time spent on the task. When it reaches zero the timer turns green, shows "Time's up!", plays a short sound — a segment of `SF-cum.mp3` defined by the `END_SOUND_START` / `END_SOUND_END` constants (in seconds) at the top of the script in `index.html` — and vibrates on mobile. Next to the timer, **⏸** pauses/resumes the countdown and **+ 1 min** adds a minute (and restarts the countdown if time was already up). The **Terminé ✔** button below stops the timer early when the gage is done — same celebration (sound, vibration, green ring) — and the app waits for the next draw.
+5. A **countdown timer** starts from that duration down to `0:00` inside a **progress ring** (green for soft, red for hard, green when done), so you can actually measure the time spent on the task. When it reaches zero the timer turns green, shows "Time's up!", plays a short sound — a segment of `SF-cum.mp3` defined by the `END_SOUND_START` / `END_SOUND_END` constants (in seconds) at the top of `app.js` — and vibrates on mobile. Next to the timer, **⏸** pauses/resumes the countdown and **+ 1 min** adds a minute (and restarts the countdown if time was already up). The **Terminé ✔** button below stops the timer early when the gage is done — same celebration (sound, vibration, green ring) — and the app waits for the next draw.
 
 Extra behavior:
 
