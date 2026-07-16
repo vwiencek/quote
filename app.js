@@ -71,7 +71,7 @@ const MAX_MINUTES = 10;
 // of the mp3 below. Adjust the two timestamps to taste.
 const END_SOUND_URL = "assets/SF-cum.mp3";
 const END_SOUND_START = 0;
-const END_SOUND_END = 3;
+const END_SOUND_END = 4;
 
 let activities = null;
 let timerId = null;
