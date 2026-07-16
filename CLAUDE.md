@@ -17,6 +17,7 @@ Contexte pour Claude Code (et tout humain qui débarque). Résume ce qui a été
 ## Fonctionnalités (état actuel)
 
 - **Verrou PIN** : au chargement, un écran de code (pavé numérique) masque tout le contenu tant que le bon code à 4 chiffres n'est pas saisi. Code = `1310` (constante `ACCESS_PIN` en haut d'`app.js`). Déverrouillage valable pour la session (`sessionStorage`) ; se referme à la fermeture de l'onglet. `body.locked` cache la carte dès le premier rendu (pas de flash).
+- **Prénoms** : le gage affiché est préfixé du prénom du joueur visé — « Vincent — … » (homme) / « Carole — … » (femme), constante `PLAYER_NAMES` en tête d'`app.js`. Le préfixe suit dans le zoom plein écran et la lecture vocale ; l'anti-répétition reste basée sur le texte brut.
 - Toggle « Donne un gage à ... un homme / une femme » (persisté en localStorage) + « 🔁 chacun son tour » (alternance auto du joueur à chaque tirage).
 - Chips de keywords (uniques, générées depuis la feuille), multi-sélection, état sélectionné = **contour cyan** (pas de ✓ ni de fond) ; chip **« Tout / Rien »** en tête pour tout (dé)sélectionner d'un coup.
 - **Slider d'intensité 1–10 + bouton GO** (persisté, `intensityLevel`) : la valeur est une **intensité max** — le tirage prend les gages du niveau exact, sinon descend au niveau en dessous, etc. (jamais au-dessus ; erreur claire s'il n'y a rien à ce niveau ou moins). Le GO est teinté à la couleur de l'intensité (dégradé vert→or→rouge, `intensityColor()`), et le statut affiche l'intensité réelle du gage si elle diffère du slider.

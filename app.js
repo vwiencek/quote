@@ -58,6 +58,10 @@ const ACCESS_PIN = "1310";
 // bounds in minutes), "keyword" (one or more filter tags, comma-separated),
 // "weight" (optional draw weight, default 1) and "intensité" (1-10; the
 // slider draws among the gages closest to the chosen value).
+// Display names: the drawn gage is prefixed with the name of the player
+// it is addressed to.
+const PLAYER_NAMES = { homme: "Vincent", femme: "Carole" };
+
 const SHEET_ID = "1eSbNFqS38as8rDRG5yLwZljaFEV1aUk-dR4_718YBMM";
 const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/" + SHEET_ID + "/gviz/tq?tqx=out:csv";
 const MIN_MINUTES = 1;
@@ -583,7 +587,8 @@ function pick() {
 
   stopSpeaking(); // a new gage is showing — cancel any ongoing read
   badge.textContent = "intensité " + gage.intensity;
-  itemEl.textContent = gage.text;
+  // Address the gage to the player it is for ("Vincent — Tu dois…").
+  itemEl.textContent = (PLAYER_NAMES[p] ? PLAYER_NAMES[p] + " — " : "") + gage.text;
   countdownEl.classList.remove("done");
   // Draw in a stopped "ready" state — the timer starts on the user's tap.
   clearInterval(timerId);
